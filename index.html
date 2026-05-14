@@ -980,10 +980,34 @@ async function delC(id){
 }
 
 function openSM(id=null,pcid=null){
-  eSid=id;document.getElementById('mst').textContent=id?'Modifica Serbatoio':'Nuovo Serbatoio';
+  eSid=id;
+  const title=id?'Modifica Serbatoio':'Nuovo Serbatoio';
+  document.getElementById('mst').textContent=title;
   so('mscc','<option value="">Seleziona...</option>'+comuni.map(c=>`<option value="${c.id}">${c.nome}</option>`).join(''));
-  if(id){const s=serbatoi.find(s=>s.id==id);if(!s)return;sv2('mscc',s.comune_id);sv2('msnome',s.nome);sv2('mscap',s.capacita||'');sv2('msquota',s.quota||'');sv2('msnote',s.note||'');}
-  else{['msnome','mscap','msquota','msnote'].forEach(id=>sv2(id,''));if(pcid)sv2('mscc',pcid);}
+  // Show/hide commune-change warning
+  let warn=document.getElementById('serb-comune-warn');
+  if(!warn){
+    warn=document.createElement('div');
+    warn.id='serb-comune-warn';
+    warn.className='alw';
+    warn.style.display='none';
+    warn.innerHTML='⚠ Stai cambiando il comune di questo serbatoio. Le zone collegate verranno spostate nel nuovo comune.';
+    document.getElementById('mscc').parentNode.after(warn);
+  }
+  if(id){
+    const s=serbatoi.find(s=>s.id==id);if(!s)return;
+    const origCid=s.comune_id;
+    sv2('mscc',s.comune_id);sv2('msnome',s.nome);sv2('mscap',s.capacita||'');sv2('msquota',s.quota||'');sv2('msnote',s.note||'');
+    document.getElementById('mscc').onchange=function(){
+      warn.style.display=(this.value && this.value!=origCid)?'block':'none';
+    };
+    warn.style.display='none';
+  } else {
+    ['msnome','mscap','msquota','msnote'].forEach(id=>sv2(id,''));
+    if(pcid)sv2('mscc',pcid);
+    if(warn)warn.style.display='none';
+    document.getElementById('mscc').onchange=null;
+  }
   om('mo-s');
 }
 async function saveSerb(){
@@ -997,10 +1021,23 @@ async function saveSerb(){
   }catch(e){toast('Errore: '+e.message,'e');}
 }
 async function delS(id){
-  if(!await conf2('Elimina serbatoio','Verranno eliminate anche zone e turni.'))return;
+  const s=serbatoi.find(s=>s.id==id);
+  const c=s?comuni.find(c=>c.id==s.comune_id):null;
+  const zCount=zone.filter(z=>z.serbatoio_id==id).length;
+  if(!await conf2(
+    'Elimina serbatoio',
+    `Stai eliminando "${s?.nome}" (${c?.nome||'?'}). Verranno eliminate anche ${zCount} zone e tutti i turni collegati. Il comune NON verrà eliminato.`
+  ))return;
   const{error}=await DB.from('serbatoi').delete().eq('id',id);
   if(error){toast('Errore: '+error.message,'e');return;}
-  serbatoi=serbatoi.filter(s=>s.id!==id);zone=zone.filter(z=>z.serbatoio_id!==id);renderCS();toast('Eliminato.','i');
+  serbatoi=serbatoi.filter(s=>s.id!==id);
+  zone=zone.filter(z=>z.serbatoio_id!==id);
+  turni=turni.filter(t=>{
+    const z=zone.find(z=>z.id==t.zona_id);
+    return !!z;
+  });
+  renderCS();
+  toast(`Serbatoio eliminato. Il comune "${c?.nome}" è ancora presente.`,'i');
 }
 
 boot();
