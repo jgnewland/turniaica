@@ -3,1041 +3,447 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>💧 Turni Idrici</title>
+<title>Turni Idrici — Consulta la tua zona</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --navy:#0f2744;--blue:#2563eb;--blue-h:#1d4ed8;--blue-l:#dbeafe;--blue-xl:#eff6ff;
-  --green:#059669;--green-l:#d1fae5;--amber:#d97706;--amber-l:#fef3c7;
-  --red:#dc2626;--red-l:#fee2e2;--orange:#ea580c;--orange-l:#ffedd5;
-  --purple:#7c3aed;--purple-l:#ede9fe;
-  --bg:#f1f5f9;--surf:#fff;--surf2:#f8fafc;--bord:#e2e8f0;--bord2:#cbd5e1;
-  --txt:#0f172a;--txt2:#475569;--txt3:#94a3b8;
-  --r:10px;--rsm:6px;--rlg:14px;
+  --blue:#1d6fa4;--blue-d:#155a85;--blue-l:#e8f4fd;--blue-xl:#f0f8ff;
+  --green:#0e9a6e;--green-l:#e6f7f2;
+  --amber:#d4890a;--amber-l:#fef7e6;
+  --red:#c0392b;--red-l:#fdf0ee;
+  --grey:#f4f6f9;--bord:#dde3ec;--bord2:#c5cdd8;
+  --txt:#1a2433;--txt2:#4a5568;--txt3:#8a96a8;
+  --surf:#ffffff;
+  --r:10px;--r-sm:6px;--r-lg:14px;
+  --shadow:0 2px 12px rgba(0,0,0,.08);
+  --shadow-lg:0 8px 32px rgba(0,0,0,.12);
 }
 html{scroll-behavior:smooth}
-body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--txt);font-size:14px;line-height:1.5;min-height:100vh}
-#loader{position:fixed;inset:0;background:rgba(255,255,255,.92);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px}
-#loader.h{display:none}
-.spin{width:36px;height:36px;border:3px solid var(--bord);border-top-color:var(--blue);border-radius:50%;animation:sp .7s linear infinite}
-@keyframes sp{to{transform:rotate(360deg)}}
-#toasts{position:fixed;bottom:20px;right:20px;z-index:9998;display:flex;flex-direction:column;gap:8px}
-.toast{padding:11px 16px;border-radius:var(--r);font-size:13px;font-weight:500;color:#fff;animation:tin .2s ease;max-width:340px}
-.toast.s{background:var(--green)}.toast.e{background:var(--red)}.toast.i{background:var(--blue)}
-@keyframes tin{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
-#login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--navy) 0%,#1e40af 100%)}
-#login-wrap.h{display:none}
-.lbox{background:var(--surf);border-radius:var(--rlg);padding:40px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,.25)}
-.lbox .ico{font-size:48px;text-align:center}
-.lbox h1{font-size:22px;font-weight:800;color:var(--navy);text-align:center;margin-top:8px}
-.lbox p{color:var(--txt2);font-size:13px;text-align:center;margin:4px 0 22px}
-.lerr{background:var(--red-l);color:var(--red);border-radius:var(--rsm);padding:10px 14px;font-size:13px;margin-bottom:14px;display:none}
-.lerr.show{display:block}
-#app{display:none;flex-direction:column;min-height:100vh}
-#app.show{display:flex}
-nav{background:var(--navy);display:flex;align-items:center;height:54px;position:sticky;top:0;z-index:500;box-shadow:0 2px 8px rgba(0,0,0,.2)}
-.nbrand{color:#fff;font-weight:800;font-size:16px;padding:0 18px;display:flex;align-items:center;gap:8px;white-space:nowrap;border-right:1px solid rgba(255,255,255,.1);height:100%}
-.ntabs{display:flex;height:100%;flex:1;overflow-x:auto}
-.ntab{padding:0 15px;color:rgba(255,255,255,.6);cursor:pointer;display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500;border:none;background:none;height:100%;white-space:nowrap;border-bottom:3px solid transparent;position:relative;top:3px;transition:all .15s}
-.ntab:hover{background:rgba(255,255,255,.07);color:#fff}
-.ntab.active{color:#fff;border-bottom-color:#60a5fa;background:rgba(255,255,255,.08)}
-.ntab.adm{display:none}
-.nright{margin-left:auto;padding:0 14px;display:flex;align-items:center;gap:8px;flex-shrink:0}
-.nuser{color:rgba(255,255,255,.6);font-size:12px;display:none}
-.nuser.show{display:block}
-.nbtn{color:rgba(255,255,255,.7);font-size:12px;cursor:pointer;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);border-radius:var(--rsm);padding:5px 12px;transition:all .15s;font-family:inherit}
-.nbtn:hover{background:rgba(255,255,255,.15);color:#fff}
-.view{display:none;padding:22px;max-width:1300px;margin:0 auto;width:100%}
-.view.active{display:block}
-.ph{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px}
-.ph h2{font-size:20px;font-weight:800;color:var(--navy)}
-.ph p{color:var(--txt2);font-size:13px;margin-top:3px}
-.field{margin-bottom:12px}
-.field label{display:block;font-size:11px;font-weight:700;color:var(--txt2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px}
-.field input,.field select,.field textarea{width:100%;padding:8px 11px;border:1.5px solid var(--bord);border-radius:var(--rsm);font-size:13px;font-family:inherit;background:var(--surf);color:var(--txt);outline:none;transition:border-color .15s}
-.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.1)}
-.field textarea{resize:vertical;min-height:68px}
-.fr2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.fr3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
-.chk{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500}
-.chk input{width:16px;height:16px;cursor:pointer;accent-color:var(--blue)}
-.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 15px;border-radius:var(--rsm);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;border:1.5px solid var(--bord);background:var(--surf);color:var(--txt);transition:all .15s;white-space:nowrap}
-.btn:hover{background:var(--surf2);border-color:var(--bord2)}
-.btn:active{transform:scale(.98)}
-.btn:disabled{opacity:.5;pointer-events:none}
-.bp{background:var(--blue);color:#fff;border-color:var(--blue)}.bp:hover{background:var(--blue-h);border-color:var(--blue-h)}
-.bg{background:var(--green);color:#fff;border-color:var(--green)}.bg:hover{filter:brightness(1.1)}
-.br{color:var(--red);border-color:#fca5a5}.br:hover{background:var(--red-l)}
-.bo{color:var(--orange);border-color:#fdba74}.bo:hover{background:var(--orange-l)}
-.bsm{padding:5px 10px;font-size:12px}
-.blg{padding:11px 22px;font-size:15px}
-.bic{padding:6px;border-radius:var(--rsm)}
-.card{background:var(--surf);border-radius:var(--r);border:1px solid var(--bord);overflow:hidden;margin-bottom:18px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
-.ch{padding:13px 16px;border-bottom:1px solid var(--bord);display:flex;align-items:center;justify-content:space-between;background:var(--surf2)}
-.ch h3{font-size:14px;font-weight:700}
-.cb{padding:16px}
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:22px}
-.stat{background:var(--surf);border-radius:var(--r);padding:16px;border:1px solid var(--bord)}
-.stn{font-size:26px;font-weight:800}
-.stl{font-size:11px;color:var(--txt3);margin-top:3px;text-transform:uppercase;letter-spacing:.4px}
-.tw{overflow-x:auto}
-table{width:100%;border-collapse:collapse;font-size:13px}
-thead th{background:var(--surf2);padding:9px 13px;text-align:left;font-weight:700;color:var(--txt2);font-size:11px;text-transform:uppercase;letter-spacing:.5px;border-bottom:2px solid var(--bord);white-space:nowrap}
-tbody tr{border-bottom:1px solid var(--bord);transition:background .1s}
-tbody tr:last-child{border-bottom:none}
-tbody tr:hover{background:var(--blue-xl)}
-tbody td{padding:10px 13px;vertical-align:middle}
-.erow td{text-align:center;padding:40px;color:var(--txt3)}
-.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap}
-.bp2{background:var(--green-l);color:#065f46}
-.bd{background:var(--amber-l);color:#92400e}
-.bna{background:#f1f5f9;color:#64748b}
-.bh{background:var(--blue-l);color:#1e40af}
-.bs2{background:var(--purple-l);color:#5b21b6}
-.brinv{background:var(--red-l);color:#991b1b}
-.bmanu{background:var(--orange-l);color:#9a3412}
-.bap{background:var(--green-l);color:#065f46}
-.tc{display:inline-flex;align-items:center;padding:3px 8px;border-radius:var(--rsm);font-size:12px;font-weight:800;background:var(--blue-l);color:var(--blue-h);font-family:monospace}
-.mo{display:none;position:fixed;inset:0;background:rgba(15,39,68,.55);z-index:1000;align-items:center;justify-content:center;backdrop-filter:blur(2px)}
-.mo.open{display:flex}
-.modal{background:var(--surf);border-radius:var(--rlg);width:600px;max-width:96vw;max-height:92vh;overflow-y:auto;padding:26px;position:relative;animation:min .2s ease}
-.modal.wide{width:720px}
-@keyframes min{from{transform:translateY(14px);opacity:0}to{transform:translateY(0);opacity:1}}
-.mh{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
-.mh h2{font-size:17px;font-weight:800}
-.mcl{background:none;border:none;cursor:pointer;color:var(--txt3);font-size:22px;padding:2px 6px;border-radius:var(--rsm)}
-.mcl:hover{background:var(--surf2);color:var(--txt)}
-.mftr{display:flex;justify-content:flex-end;gap:10px;margin-top:20px;padding-top:16px;border-top:1px solid var(--bord)}
-.cw{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:2000;align-items:center;justify-content:center}
-.cw.open{display:flex}
-.cbox{background:var(--surf);border-radius:var(--rlg);padding:26px;width:340px;max-width:95vw}
-.cbox h3{font-size:15px;font-weight:700;margin-bottom:7px}
-.cbox p{color:var(--txt2);font-size:13px;margin-bottom:18px}
-.cacts{display:flex;gap:10px;justify-content:flex-end}
-.fbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:flex-end}
-.fg{display:flex;flex-direction:column;gap:3px}
-.fg label{font-size:11px;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:.4px}
-.fg select,.fg input{padding:7px 10px;border:1.5px solid var(--bord);border-radius:var(--rsm);font-size:13px;font-family:inherit;background:var(--surf);color:var(--txt);outline:none}
-.fg select:focus,.fg input:focus{border-color:var(--blue)}
-/* PUBLIC */
-.phero{background:linear-gradient(135deg,var(--navy) 0%,#1d4ed8 100%);color:#fff;padding:34px 22px;text-align:center;margin:-22px -22px 24px}
-.phero h1{font-size:26px;font-weight:900;margin-bottom:5px}
-.phero p{opacity:.75;font-size:14px}
-.pmeta{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.12);border-radius:999px;padding:5px 14px;font-size:12px;margin-top:10px;color:rgba(255,255,255,.85)}
-.psbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;align-items:center}
-.psearch{flex:1;min-width:180px;padding:10px 14px;border:1.5px solid var(--bord);border-radius:var(--r);font-size:14px;font-family:inherit;background:var(--surf);color:var(--txt);outline:none}
-.psearch:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.1)}
-.tgrp{display:flex;gap:3px;background:var(--surf2);border-radius:var(--rsm);padding:3px;border:1px solid var(--bord)}
-.tbtn{padding:5px 13px;border-radius:calc(var(--rsm) - 2px);border:none;background:transparent;font-size:12px;font-weight:600;cursor:pointer;color:var(--txt3);transition:all .15s}
-.tbtn.active{background:var(--surf);color:var(--txt);box-shadow:0 1px 4px rgba(0,0,0,.1)}
-.cblk{margin-bottom:30px}
-.cttl{font-size:16px;font-weight:800;color:var(--navy);margin-bottom:12px;display:flex;align-items:center;gap:7px;border-bottom:2px solid var(--blue-l);padding-bottom:7px}
-.sttl{font-size:11px;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:.6px;margin:10px 0 8px}
-.zgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
-.zcard{background:var(--surf);border:1px solid var(--bord);border-radius:var(--r);padding:13px;cursor:pointer;transition:box-shadow .15s,border-color .15s}
-.zcard:hover{box-shadow:0 2px 12px rgba(37,99,235,.1);border-color:var(--bord2)}
-.zctop{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px}
-.zcname{font-weight:800;font-size:13px}
-.zcdesc{font-size:11px;color:var(--txt3);line-height:1.5}
-.zcnote{font-size:11px;color:var(--orange);margin-top:5px;font-weight:600}
-.sp{padding:4px 10px;border-radius:999px;font-size:12px;font-weight:800;white-space:nowrap}
-.sps{background:var(--blue-l);color:#1e40af}
-.sph{background:var(--green-l);color:#065f46}
-.spn{background:#f1f5f9;color:#94a3b8}
-.spr{background:var(--red-l);color:#991b1b}
-.spm{background:var(--orange-l);color:#9a3412}
-.spa{background:var(--green-l);color:#065f46}
-.drow{display:flex;gap:8px;margin-bottom:10px;align-items:flex-start}
-.dlbl{font-size:11px;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:.4px;min-width:110px;padding-top:2px}
-.dval{font-size:13px;color:var(--txt)}
-.ww{overflow-x:auto}
-.wtbl{width:100%;border-collapse:collapse;min-width:700px;font-size:12px}
-.wtbl th{background:var(--navy);color:#fff;padding:8px 10px;text-align:center;font-size:11px;font-weight:600}
-.wtbl th:first-child{text-align:left;min-width:160px}
-.wtbl td{padding:7px 10px;border-bottom:1px solid var(--bord);border-right:1px solid var(--bord)}
-.wtbl td:first-child{background:var(--surf2);font-weight:600;color:var(--txt2);font-size:11px}
-.wtbl tr:hover td{background:var(--blue-xl)}
-.wc{display:inline-block;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700}
-.wcs{background:var(--blue-l);color:#1e40af}
-.wch{background:var(--green-l);color:#065f46}
-.wcn{background:#f1f5f9;color:var(--txt3)}
-.wcr{background:var(--red-l);color:#991b1b}
-.wcm{background:var(--orange-l);color:#9a3412}
-.wca{background:var(--green-l);color:#065f46}
-.tdc{background:var(--blue-xl)}
-.tht{background:var(--blue-h) !important}
-.alw{background:var(--amber-l);color:#92400e;border:1px solid #fcd34d;border-radius:var(--r);padding:10px 14px;font-size:13px;margin-top:8px}
-.als{background:var(--green-l);color:#065f46;border:1px solid #6ee7b7;border-radius:var(--r);padding:10px 14px;font-size:13px;margin-top:8px}
-/* SQL block */
-.sqlblk{background:var(--navy);color:#a5f3fc;border-radius:var(--rsm);padding:14px;font-family:monospace;font-size:11px;line-height:1.8;margin:10px 0;overflow-x:auto;white-space:pre;cursor:pointer}
-.sqlblk:hover{opacity:.9}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--grey);color:var(--txt);font-size:15px;line-height:1.6;min-height:100vh}
+
+/* HEADER */
+header{background:var(--blue);color:#fff;padding:0 20px;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.2)}
+.header-inner{max-width:960px;margin:0 auto;height:60px;display:flex;align-items:center;gap:14px}
+.logo{display:flex;align-items:center;gap:10px;font-size:17px;font-weight:700;color:#fff;text-decoration:none}
+.logo-drop{width:32px;height:32px;background:rgba(255,255,255,.2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px}
+.header-sep{flex:1}
+.header-date{font-size:13px;color:rgba(255,255,255,.75);display:flex;align-items:center;gap:6px}
+.btn-tecnici{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff;padding:7px 14px;border-radius:var(--r-sm);font-size:12px;font-weight:600;cursor:pointer;text-decoration:none;transition:.15s;font-family:inherit}
+.btn-tecnici:hover{background:rgba(255,255,255,.25)}
+
+/* HERO */
+.hero{background:linear-gradient(135deg,var(--blue) 0%,var(--blue-d) 100%);color:#fff;padding:40px 20px 0}
+.hero-inner{max-width:960px;margin:0 auto}
+.hero h1{font-size:28px;font-weight:800;margin-bottom:8px}
+.hero p{font-size:16px;color:rgba(255,255,255,.8);margin-bottom:28px}
+
+/* SEARCH BOX */
+.search-box{background:#fff;border-radius:var(--r-lg) var(--r-lg) 0 0;padding:20px;box-shadow:0 -4px 20px rgba(0,0,0,.1)}
+.search-row{display:flex;gap:10px;flex-wrap:wrap}
+.search-input{flex:1;min-width:220px;background:var(--grey);border:1px solid var(--bord);border-radius:var(--r-sm);padding:11px 14px;font-size:14px;font-family:inherit;color:var(--txt);outline:none;transition:.15s}
+.search-input:focus{border-color:var(--blue);background:#fff;box-shadow:0 0 0 3px rgba(29,111,164,.1)}
+.search-select{background:var(--grey);border:1px solid var(--bord);border-radius:var(--r-sm);padding:11px 14px;font-size:14px;font-family:inherit;color:var(--txt);outline:none;cursor:pointer;min-width:160px}
+.search-select:focus{border-color:var(--blue)}
+.tgroup{display:flex;border:1px solid var(--bord);border-radius:var(--r-sm);overflow:hidden}
+.tbtn{padding:10px 18px;background:#fff;border:none;font-size:13px;font-weight:600;cursor:pointer;color:var(--txt2);font-family:inherit;transition:.15s}
+.tbtn:first-child{border-right:1px solid var(--bord)}
+.tbtn.active{background:var(--blue);color:#fff}
+.tbtn:hover:not(.active){background:var(--grey)}
+
+/* MAIN */
+.main{max-width:960px;margin:0 auto;padding:0 20px 60px}
+.content-card{background:#fff;border-radius:0 0 var(--r-lg) var(--r-lg);border:1px solid var(--bord);border-top:none;padding:20px;margin-bottom:20px;box-shadow:var(--shadow)}
+
+/* STATO OGGI */
+.oggi-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:gap}
+.oggi-title{font-size:16px;font-weight:700;color:var(--txt)}
+.oggi-sub{font-size:13px;color:var(--txt3);margin-top:2px}
+
+/* COMUNE SECTION */
+.comune-section{margin-bottom:24px}
+.comune-title{display:flex;align-items:center;gap:10px;padding:12px 0 10px;border-bottom:2px solid var(--blue-l);margin-bottom:12px}
+.comune-title h2{font-size:17px;font-weight:800;color:var(--blue)}
+.comune-badge{background:var(--blue-l);color:var(--blue);font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px}
+
+/* SERBATOIO */
+.serb-label{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--txt3);margin:12px 0 6px;display:flex;align-items:center;gap:6px}
+.serb-label::before{content:'';display:inline-block;width:3px;height:12px;background:var(--blue);border-radius:2px}
+
+/* TURNO CARD */
+.turno-list{display:flex;flex-direction:column;gap:8px}
+.turno-card{border:1px solid var(--bord);border-radius:var(--r);padding:12px 14px;display:flex;align-items:center;gap:12px;background:#fff;transition:.15s}
+.turno-card:hover{border-color:var(--blue);box-shadow:0 2px 8px rgba(29,111,164,.1)}
+.tc-badge{min-width:52px;height:52px;border-radius:var(--r-sm);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;line-height:1.2}
+.tc-badge.sched{background:var(--blue-l);color:var(--blue)}
+.tc-badge.h24{background:var(--green-l);color:var(--green)}
+.tc-badge.guasto{background:var(--red-l);color:var(--red)}
+.tc-badge.sospeso{background:var(--amber-l);color:var(--amber)}
+.tc-badge .tc-icon{font-size:20px;margin-bottom:2px}
+.tc-info{flex:1;min-width:0}
+.tc-zona{font-size:14px;font-weight:700;color:var(--txt)}
+.tc-desc{font-size:12px;color:var(--txt2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tc-note{font-size:12px;color:var(--amber);margin-top:4px;display:flex;align-items:center;gap:4px}
+.tc-right{text-align:right;flex-shrink:0}
+.tc-orario{font-size:16px;font-weight:800;color:var(--txt);white-space:nowrap}
+.tc-date{font-size:11px;color:var(--txt3);margin-top:2px}
+.pill{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700}
+.pill-sched{background:var(--blue-l);color:var(--blue)}
+.pill-h24{background:var(--green-l);color:var(--green)}
+.pill-guasto{background:var(--red-l);color:var(--red)}
+.pill-sospeso{background:var(--amber-l);color:var(--amber)}
+
+/* SETTIMANA GRID */
+.week-grid{overflow-x:auto}
+.wg-table{width:100%;border-collapse:separate;border-spacing:0;font-size:13px}
+.wg-table th{background:var(--blue);color:#fff;padding:9px 10px;text-align:center;font-size:12px;font-weight:700}
+.wg-table th:first-child{text-align:left;padding-left:14px;min-width:180px;background:var(--blue-d)}
+.wg-table td{padding:8px 10px;border-bottom:1px solid var(--bord);vertical-align:middle;text-align:center}
+.wg-table td:first-child{text-align:left;font-size:12px;font-weight:600;color:var(--txt2);padding-left:14px;background:var(--grey)}
+.wg-table tr:last-child td{border-bottom:none}
+.wg-table tr:hover td{background:var(--blue-xl)}
+.wg-table tr:hover td:first-child{background:var(--blue-l)}
+.wg-chip{display:inline-block;padding:3px 8px;border-radius:var(--r-sm);font-size:11px;font-weight:700;white-space:nowrap}
+.wg-serb-row td{background:var(--grey);font-size:11px;font-weight:700;color:var(--txt3);letter-spacing:.05em;text-transform:uppercase;padding:6px 14px;border-bottom:1px solid var(--bord)}
+.th-today{background:rgba(255,255,255,.25)!important}
+.td-today{background:var(--blue-xl)!important}
+
+/* EMPTY / LOADER */
+.empty{text-align:center;padding:50px 20px;color:var(--txt3)}
+.empty-icon{font-size:40px;margin-bottom:12px}
+.empty p{font-size:15px}
+.loader{text-align:center;padding:40px;color:var(--txt3)}
+.spinner{width:32px;height:32px;border:3px solid var(--bord);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* INFO STRIP */
+.info-strip{background:var(--blue-l);border:1px solid rgba(29,111,164,.2);border-radius:var(--r);padding:12px 16px;margin-bottom:16px;font-size:13px;color:var(--blue);display:flex;align-items:center;gap:8px}
+
+/* LEGENDA */
+.legenda{display:flex;gap:12px;flex-wrap:wrap;margin-top:16px;padding-top:16px;border-top:1px solid var(--bord)}
+.leg-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--txt2)}
+.leg-dot{width:10px;height:10px;border-radius:50%}
+
+/* FOOTER */
+footer{background:var(--blue-d);color:rgba(255,255,255,.6);text-align:center;padding:20px;font-size:12px}
+footer a{color:rgba(255,255,255,.5);text-decoration:none;margin-left:16px;font-size:11px}
+footer a:hover{color:#fff}
+
+/* RESPONSIVE */
+@media(max-width:600px){
+  .hero h1{font-size:22px}
+  .search-row{flex-direction:column}
+  .tgroup{width:100%}
+  .tbtn{flex:1;text-align:center}
+  .tc-badge{min-width:44px;height:44px}
+  .header-date{display:none}
+}
 </style>
 </head>
 <body>
-<div id="loader"><div class="spin"></div><span id="lmsg" style="font-size:13px;color:var(--txt2)">Connessione...</span></div>
-<div id="toasts"></div>
 
-<!-- LOGIN -->
-<div id="login-wrap">
-  <div class="lbox">
-    <div class="ico">💧</div>
-    <h1>IVR Turni Acqua</h1>
-    <p>Pannello amministratore</p>
-    <div class="lerr" id="lerr"></div>
-    <div class="field"><label>Email</label><input type="email" id="l-em" placeholder="admin@example.com" autocomplete="email"></div>
-    <div class="field"><label>Password</label><input type="password" id="l-pw" placeholder="••••••••" autocomplete="current-password"></div>
-    <button class="btn bp blg" style="width:100%;margin-top:6px" onclick="doLogin()" id="lbtn">Accedi</button>
-    <div style="text-align:center;margin-top:12px">
-      <button class="btn" style="border:none;color:var(--txt3);font-size:13px" onclick="goPub()">← Vista pubblica</button>
-    </div>
+<!-- HEADER -->
+<header>
+  <div class="header-inner">
+    <a class="logo" href="#">
+      <div class="logo-drop">💧</div>
+      Turni Idrici
+    </a>
+    <div class="header-sep"></div>
+    <div class="header-date">📅 <span id="hdate"></span></div>
+    <a class="btn-tecnici" href="turni_editor_finale.html" title="Accesso riservato al personale tecnico">🔧 Tecnici</a>
   </div>
-</div>
+</header>
 
-<!-- APP -->
-<div id="app">
-  <nav>
-    <div class="nbrand">💧 Turni Acqua</div>
-    <div class="ntabs">
-      <button class="ntab active" data-v="pub" onclick="sv('pub')">🌐 Vista Pubblica</button>
-      <button class="ntab adm" data-v="dash" onclick="sv('dash')">📊 Dashboard</button>
-      <button class="ntab adm" data-v="turni" onclick="sv('turni')">📅 Turni</button>
-      <button class="ntab adm" data-v="zone" onclick="sv('zone')">📍 Zone</button>
-      <button class="ntab adm" data-v="cs" onclick="sv('cs')">🏘 Comuni</button>
-    </div>
-    <div class="nright">
-      <span class="nuser" id="nuser"></span>
-      <button class="nbtn" id="blog" style="display:none" onclick="doLogout()">Esci</button>
-      <button class="nbtn" id="blin" onclick="showLogin()">🔐 Admin</button>
-    </div>
-  </nav>
-
-  <!-- PUBBLICA -->
-  <div id="view-pub" class="view active">
-    <div class="phero">
-      <h1>💧 Turni Idrici</h1>
-      <p>Consulta orari di erogazione nella tua zona</p>
-      <div class="pmeta">📅 <span id="pdate"></span></div>
-    </div>
-    <div class="psbar">
-      <input type="text" class="psearch" id="pq" placeholder="🔍 Cerca comune, zona, via..." oninput="renderPub()">
-      <select class="psearch" style="flex:0 0 auto;min-width:160px" id="pcf" onchange="renderPub()"><option value="">Tutti i comuni</option></select>
-      <div class="tgrp">
-        <button class="tbtn active" id="tbo" onclick="setPM('oggi')">Oggi</button>
-        <button class="tbtn" id="tbw" onclick="setPM('week')">Settimana</button>
-      </div>
-    </div>
-    <div id="pbody"></div>
-  </div>
-
-  <!-- DASHBOARD -->
-  <div id="view-dash" class="view">
-    <div class="ph"><div><h2>Dashboard</h2><p>Panoramica operativa</p></div>
-      <button class="btn bp" onclick="sv('turni');openTM()">+ Nuovo turno</button>
-    </div>
-    <div class="stats" id="dstats"></div>
-    <div class="card"><div class="ch"><h3>Riepilogo per comune — oggi</h3></div>
-      <div class="tw"><table><thead><tr>
-        <th>Comune</th><th>Zone</th><th>Turni</th><th>H24</th><th>Manutenzioni</th><th>Rinviati</th><th>Bozze</th><th></th>
-      </tr></thead><tbody id="dtbl"></tbody></table></div>
-    </div>
-  </div>
-
-  <!-- TURNI -->
-  <div id="view-turni" class="view">
-    <div class="ph">
-      <div><h2>Gestione Turni</h2><p>Inserisci, modifica e pubblica</p></div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn bg" onclick="pubAll()">✅ Pubblica tutto</button>
-        <button class="btn bp" onclick="openTM()">+ Nuovo turno</button>
-      </div>
-    </div>
-    <div class="fbar">
-      <div class="fg"><label>Comune</label><select id="efc" onchange="efls();renderTT()"><option value="">Tutti</option></select></div>
-      <div class="fg"><label>Serbatoio</label><select id="efs" onchange="renderTT()"><option value="">Tutti</option></select></div>
-      <div class="fg"><label>Da</label><input type="date" id="efd1" onchange="renderTT()"></div>
-      <div class="fg"><label>A</label><input type="date" id="efd2" onchange="renderTT()"></div>
-      <div class="fg"><label>Tipo</label><select id="eft" onchange="renderTT()">
-        <option value="">Tutti</option>
-        <option value="schedulato">Schedulato</option>
-        <option value="H24">H24</option>
-        <option value="manutenzione">Manutenzione</option>
-        <option value="guasto">Guasto</option>
-        <option value="rinviato">Rinviato</option>
-        <option value="n/a">N/A</option>
-      </select></div>
-      <div class="fg"><label>Stato</label><select id="efp" onchange="renderTT()">
-        <option value="">Tutti</option><option value="1">Pubblicato</option><option value="0">Bozza</option>
-      </select></div>
-      <button class="btn bsm" onclick="clrF()">Reset</button>
-    </div>
-    <div class="card"><div class="ch"><h3>Turni</h3><span id="tcnt" style="font-size:12px;color:var(--txt3)"></span></div>
-      <div class="tw"><table>
-        <thead><tr><th>Codice</th><th>Comune</th><th>Serbatoio</th><th>Zona</th><th>Data</th><th>Orario</th><th>Tipo</th><th>Pub.</th><th style="width:120px"></th></tr></thead>
-        <tbody id="ttbl"></tbody>
-      </table></div>
-    </div>
-  </div>
-
-  <!-- ZONE -->
-  <div id="view-zone" class="view">
-    <div class="ph">
-      <div><h2>Zone</h2><p>Gestisci le zone idriche</p></div>
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <div class="fg" style="flex-direction:row;align-items:center;gap:6px">
-          <label style="white-space:nowrap;font-size:11px;font-weight:700;color:var(--txt3);text-transform:uppercase">Comune</label>
-          <select id="zfc" onchange="renderZ()" style="width:auto"><option value="">Tutti</option></select>
+<!-- HERO + SEARCH -->
+<div class="hero">
+  <div class="hero-inner">
+    <h1>💧 Consulta i Turni Idrici</h1>
+    <p>Trova gli orari di erogazione idrica nella tua zona</p>
+    <div class="search-box">
+      <div class="search-row">
+        <input class="search-input" type="text" id="q" placeholder="🔍 Cerca via, zona, comune…" oninput="render()">
+        <select class="search-select" id="cf" onchange="render()">
+          <option value="">Tutti i comuni</option>
+        </select>
+        <div class="tgroup">
+          <button class="tbtn active" id="tb-o" onclick="setMode('oggi')">Oggi</button>
+          <button class="tbtn" id="tb-w" onclick="setMode('week')">Settimana</button>
         </div>
-        <button class="btn bp" onclick="openZM()">+ Nuova zona</button>
       </div>
     </div>
-    <div class="card"><div class="tw"><table>
-      <thead><tr><th>Codice</th><th>Comune</th><th>Serbatoio</th><th>Zona</th><th>Strade</th><th>Freq.</th><th style="width:100px"></th></tr></thead>
-      <tbody id="ztbl"></tbody>
-    </table></div></div>
   </div>
+</div>
 
-  <!-- COMUNI/SERBATOI -->
-  <div id="view-cs" class="view">
-    <div class="ph"><div><h2>Comuni &amp; Serbatoi</h2><p>Struttura geografica</p></div>
-      <div style="display:flex;gap:8px">
-        <button class="btn" onclick="openSM()">+ Serbatoio</button>
-        <button class="btn bp" onclick="openCM()">+ Comune</button>
-      </div>
+<!-- MAIN -->
+<div class="main">
+  <div class="content-card">
+    <div id="body-content">
+      <div class="loader"><div class="spinner"></div>Caricamento turni…</div>
     </div>
-    <div id="cstree"></div>
-  </div>
-</div>
-
-<!-- MODALE TURNO -->
-<div class="mo" id="mo-t">
-<div class="modal wide">
-  <div class="mh"><h2 id="mtt">Nuovo Turno</h2><button class="mcl" onclick="cm('mo-t')">×</button></div>
-  <div class="fr2">
-    <div class="field"><label>Comune *</label><select id="mtc" onchange="mtls()"><option value="">Seleziona...</option></select></div>
-    <div class="field"><label>Serbatoio *</label><select id="mts" onchange="mtlz()"><option value="">Seleziona...</option></select></div>
-  </div>
-  <div class="fr2">
-    <div class="field"><label>Zona *</label><select id="mtz"><option value="">Seleziona...</option></select></div>
-    <div class="field"><label>Data *</label><input type="date" id="mtd"></div>
-  </div>
-  <div class="fr2">
-    <div class="field"><label>Tipo erogazione *</label>
-      <select id="mtipo" onchange="mttog()">
-        <option value="schedulato">Orario schedulato</option>
-        <option value="H24">H24 — continua</option>
-        <option value="manutenzione">Manutenzione programmata</option>
-        <option value="guasto">Guasto / Interruzione</option>
-        <option value="rinviato">Rinviato</option>
-        <option value="n/a">Non disponibile (N/A)</option>
-        <option value="aperto">Aperto da ieri</option>
-      </select>
-    </div>
-    <div class="field" id="morf"><label>Orario inizio</label><input type="time" id="mora" value="08:00"></div>
-  </div>
-  <div class="fr2" id="mdurf">
-    <div class="field"><label>Durata prevista (ore)</label><input type="number" id="mdur" placeholder="es. 6" min="1" max="24" step="0.5"></div>
-    <div class="field"><label>Orario fine</label><input type="time" id="mfine"></div>
-  </div>
-  <div id="mextra" style="display:none">
-    <div style="height:1px;background:var(--bord);margin:4px 0 14px"></div>
-    <div class="field"><label>Motivo interruzione / lavori</label>
-      <select id="mmotivo">
-        <option value="">Seleziona...</option>
-        <option value="Lavori programmati sulla rete">Lavori programmati sulla rete</option>
-        <option value="Sostituzione tubazione">Sostituzione tubazione</option>
-        <option value="Riparazione perdita">Riparazione perdita</option>
-        <option value="Guasto pompa">Guasto pompa</option>
-        <option value="Guasto elettrico">Guasto elettrico</option>
-        <option value="Rottura condotta principale">Rottura condotta principale</option>
-        <option value="Intervento serbatoio">Intervento serbatoio</option>
-        <option value="Siccità / riduzione disponibilità idrica">Siccità / riduzione disponibilità idrica</option>
-        <option value="Altro">Altro</option>
-      </select>
-    </div>
-    <div class="field"><label>Descrizione dettagliata</label>
-      <textarea id="mdesc" placeholder="Descrivi il problema o i lavori in corso..."></textarea></div>
-    <div class="fr2">
-      <div class="field"><label>Prossima erogazione — data</label><input type="date" id="mpd"></div>
-      <div class="field"><label>Prossima erogazione — orario</label><input type="time" id="mpo"></div>
-    </div>
-    <div class="field"><label>Ditta / squadra intervenuta</label><input type="text" id="mdit" placeholder="es. Impresa Rossi srl"></div>
-  </div>
-  <div style="height:1px;background:var(--bord);margin:4px 0 14px"></div>
-  <div class="field"><label>Note pubbliche (visibili ai cittadini)</label>
-    <textarea id="mnote" placeholder="Messaggi di servizio, avvisi, raccomandazioni..."></textarea></div>
-  <div class="fr2">
-    <div class="field"><label>Pressione stimata (bar)</label><input type="number" id="mpres" placeholder="es. 3.5" step="0.1" min="0" max="10"></div>
-    <div class="field"><label>Portata stimata (l/s)</label><input type="number" id="mport" placeholder="es. 15" step="0.5" min="0"></div>
-  </div>
-  <label class="chk" style="margin-bottom:14px"><input type="checkbox" id="mpub"> Pubblica subito (visibile ai cittadini)</label>
-  <div class="mftr">
-    <button class="btn" onclick="cm('mo-t')">Annulla</button>
-    <button class="btn bp" onclick="saveTurno()" id="mtsave">💾 Salva turno</button>
-  </div>
-</div>
-</div>
-
-<!-- MODALE ZONA -->
-<div class="mo" id="mo-z">
-<div class="modal">
-  <div class="mh"><h2 id="mzt">Nuova Zona</h2><button class="mcl" onclick="cm('mo-z')">×</button></div>
-  <div class="fr2">
-    <div class="field"><label>Comune *</label><select id="mzc" onchange="mzls()"><option value="">Seleziona...</option></select></div>
-    <div class="field"><label>Serbatoio *</label><select id="mzs"><option value="">Seleziona...</option></select></div>
-  </div>
-  <div class="fr2">
-    <div class="field"><label>Codice</label><input type="text" id="mzcod" placeholder="es. A089011001"></div>
-    <div class="field"><label>Nome zona *</label><input type="text" id="mznome" placeholder="es. ZONA 1"></div>
-  </div>
-  <div class="field"><label>Strade / descrizione</label>
-    <textarea id="mzdesc" placeholder="Via Roma, Via Garibaldi, Piazza Municipio..."></textarea></div>
-  <div class="fr2">
-    <div class="field"><label>Frequenza erogazione</label>
-      <select id="mzfreq">
-        <option value="">Non specificata</option>
-        <option value="Giornaliera">Giornaliera</option>
-        <option value="A giorni alterni">A giorni alterni</option>
-        <option value="Ogni 3 giorni">Ogni 3 giorni</option>
-        <option value="Settimanale">Settimanale</option>
-        <option value="H24">H24</option>
-      </select>
-    </div>
-    <div class="field"><label>Pressione tipica (bar)</label><input type="number" id="mzpres" placeholder="es. 3" step="0.5" min="0" max="10"></div>
-  </div>
-  <div class="field"><label>Note interne (solo admin)</label><textarea id="mznote" placeholder="Note operative..."></textarea></div>
-  <div class="mftr">
-    <button class="btn" onclick="cm('mo-z')">Annulla</button>
-    <button class="btn bp" onclick="saveZona()">💾 Salva zona</button>
-  </div>
-</div>
-</div>
-
-<!-- MODALE COMUNE -->
-<div class="mo" id="mo-c">
-<div class="modal" style="max-width:420px">
-  <div class="mh"><h2 id="mct">Nuovo Comune</h2><button class="mcl" onclick="cm('mo-c')">×</button></div>
-  <div class="field"><label>Nome comune *</label><input type="text" id="mcnome" placeholder="es. Agrigento"></div>
-  <div class="fr2">
-    <div class="field"><label>Provincia</label><input type="text" id="mcprov" placeholder="AG" maxlength="2" style="text-transform:uppercase"></div>
-    <div class="field"><label>Codice ISTAT</label><input type="text" id="mcistat" placeholder="es. A089"></div>
-  </div>
-  <div class="field"><label>Note operative</label><textarea id="mcnote" placeholder="Contatti, riferimenti..."></textarea></div>
-  <div class="mftr">
-    <button class="btn" onclick="cm('mo-c')">Annulla</button>
-    <button class="btn bp" onclick="saveComune()">💾 Salva</button>
-  </div>
-</div>
-</div>
-
-<!-- MODALE SERBATOIO -->
-<div class="mo" id="mo-s">
-<div class="modal" style="max-width:460px">
-  <div class="mh"><h2 id="mst">Nuovo Serbatoio</h2><button class="mcl" onclick="cm('mo-s')">×</button></div>
-  <div class="field"><label>Comune *</label><select id="mscc"><option value="">Seleziona...</option></select></div>
-  <div class="field"><label>Nome serbatoio *</label><input type="text" id="msnome" placeholder="es. Serbatoio Madonna della Rocca"></div>
-  <div class="fr2">
-    <div class="field"><label>Capacità (m³)</label><input type="number" id="mscap" placeholder="es. 5000" min="0"></div>
-    <div class="field"><label>Quota (m s.l.m.)</label><input type="number" id="msquota" placeholder="es. 320" min="0"></div>
-  </div>
-  <div class="field"><label>Note</label><textarea id="msnote" placeholder="Stato, caratteristiche..."></textarea></div>
-  <div class="mftr">
-    <button class="btn" onclick="cm('mo-s')">Annulla</button>
-    <button class="btn bp" onclick="saveSerb()">💾 Salva</button>
-  </div>
-</div>
-</div>
-
-<!-- MODALE DETTAGLIO PUBBLICO -->
-<div class="mo" id="mo-det">
-<div class="modal">
-  <div class="mh"><h2>Dettaglio zona</h2><button class="mcl" onclick="cm('mo-det')">×</button></div>
-  <div id="detbody"></div>
-</div>
-</div>
-
-<!-- CONFIRM -->
-<div class="cw" id="cw">
-  <div class="cbox">
-    <h3 id="ctit">Conferma</h3><p id="cmsg">Sei sicuro?</p>
-    <div class="cacts">
-      <button class="btn" onclick="ccf(false)">Annulla</button>
-      <button class="btn br" onclick="ccf(true)">Conferma</button>
+    <div class="legenda">
+      <div class="leg-item"><div class="leg-dot" style="background:var(--blue)"></div> Schedulato</div>
+      <div class="leg-item"><div class="leg-dot" style="background:var(--green)"></div> H24 continuo</div>
+      <div class="leg-item"><div class="leg-dot" style="background:var(--red)"></div> Guasto</div>
+      <div class="leg-item"><div class="leg-dot" style="background:var(--amber)"></div> Sospeso</div>
     </div>
   </div>
 </div>
+
+<!-- FOOTER -->
+<footer>
+  © 2025 Turni Idrici — Servizio idrico integrato
+  <a href="turni_editor_finale.html">Accesso tecnici</a>
+</footer>
 
 <script>
-const DB=window.supabase.createClient(
-  'https://myvebxjsmlomroczjbgg.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im15dmVieGpzbWxvbXJvY3pqYmdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2NTYwODEsImV4cCI6MjA5NDIzMjA4MX0.DB6Ce9zBZA6PceBzG67N3QxnRXNuCf_Fqu01QQCs7RY'
-);
-let comuni=[],serbatoi=[],zone=[],turni=[];
-let isAdm=false,curUser=null,pm='oggi',cfr=null;
-let eTid=null,eZid=null,eCid=null,eSid=null;
-const DAYS=['domenica','lunedì','martedì','mercoledì','giovedì','venerdì','sabato'];
-const MON=['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'];
-const td=()=>new Date().toISOString().slice(0,10);
-const pD=(n)=>{const d=new Date();d.setDate(d.getDate()+n);return d.toISOString().slice(0,10);}
-const fD=(iso)=>{const d=new Date(iso+'T00:00:00');return DAYS[d.getDay()]+' '+d.getDate()+' '+MON[d.getMonth()]+' '+d.getFullYear();}
-const sh=(id,fl=false)=>{const e=document.getElementById(id);if(!e)return;e.classList.remove('h');if(fl)e.classList.add('show');}
-const hi=(id)=>{const e=document.getElementById(id);if(!e)return;e.classList.add('h');e.classList.remove('show');}
-const sl=(m='')=>{document.getElementById('lmsg').textContent=m;sh('loader');}
-const hl=()=>hi('loader');
-const cm=(id)=>document.getElementById(id).classList.remove('open');
-const om=(id)=>document.getElementById(id).classList.add('open');
-const sv2=(id,v)=>{const e=document.getElementById(id);if(e)e.value=v||'';}
-const so=(id,h)=>{const e=document.getElementById(id);if(e)e.innerHTML=h;}
+// ============================================================
+// CONFIG SUPABASE
+// ============================================================
+const SUPABASE_URL = 'https://myvebxjsmlomroczjbgg.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im15dmVieGpzbWxvbXJvY3pqYmdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2NTYwODEsImV4cCI6MjA5NDIzMjA4MX0.DB6Ce9zBZA6PceBzG67N3QxnRXNuCf_Fqu01QQCs7RY';
+// ============================================================
 
-function toast(m,t='i'){const c=document.getElementById('toasts'),el=document.createElement('div');el.className='toast '+t;el.textContent=m;c.appendChild(el);setTimeout(()=>el.remove(),3500);}
-function conf2(ti,ms){return new Promise(r=>{document.getElementById('ctit').textContent=ti;document.getElementById('cmsg').textContent=ms;document.getElementById('cw').classList.add('open');cfr=r;});}
-function ccf(v){document.getElementById('cw').classList.remove('open');if(cfr){cfr(v);cfr=null;}}
-document.addEventListener('keydown',e=>{
-  if(e.key==='Escape')document.querySelectorAll('.mo.open').forEach(m=>m.classList.remove('open'));
-  if(e.key==='Enter'&&!document.getElementById('login-wrap').classList.contains('h'))doLogin();
-});
+const { createClient } = supabase;
+const DB = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-async function boot(){
-  sl('Connessione...');
-  try{
-    const{data:{session}}=await DB.auth.getSession();
-    if(session){curUser=session.user;isAdm=true;}
-    await loadAll();
-    hi('login-wrap');sh('app',true);sv_('pub');
-    if(isAdm)admUI(true);
-  }catch(e){toast('Errore: '+e.message,'e');}
-  finally{hl();}
-}
-function admUI(on){
-  document.querySelectorAll('.ntab.adm').forEach(t=>on?t.classList.remove('adm'):t.classList.add('adm'));
-  // re-add adm class to hide when off
-  if(!on)document.querySelectorAll('.ntab:not([data-v="pub"])').forEach(t=>t.classList.add('adm'));
-  document.getElementById('nuser').textContent=curUser?.email||'';
-  document.getElementById('nuser').classList.toggle('show',on);
-  document.getElementById('blog').style.display=on?'block':'none';
-  document.getElementById('blin').style.display=on?'none':'block';
-}
-function showLogin(){hi('app');sh('login-wrap');document.getElementById('l-em').focus();}
-function goPub(){hi('login-wrap');sh('app',true);sv_('pub');}
-async function doLogin(){
-  const em=document.getElementById('l-em').value.trim(),pw=document.getElementById('l-pw').value;
-  const er=document.getElementById('lerr'),bt=document.getElementById('lbtn');
-  if(!em||!pw){er.textContent='Inserisci email e password.';er.classList.add('show');return;}
-  bt.disabled=true;bt.textContent='Accesso...';
-  const{data,error}=await DB.auth.signInWithPassword({email:em,password:pw});
-  bt.disabled=false;bt.textContent='Accedi';
-  if(error){er.textContent=error.message==='Invalid login credentials'?'Credenziali errate.':error.message;er.classList.add('show');return;}
-  er.classList.remove('show');curUser=data.user;isAdm=true;
-  await loadAll();hi('login-wrap');sh('app',true);admUI(true);sv_('dash');toast('Benvenuto!','s');
-}
-async function doLogout(){await DB.auth.signOut();curUser=null;isAdm=false;admUI(false);sv_('pub');toast('Uscita effettuata.','i');}
+let comuni = [], serbatoi = [], zone = [], turni = [];
+let viewMode = 'oggi';
 
-async function loadAll(){
-  sl('Caricamento...');
-  try{
-    const[c,s,z,t]=await Promise.all([
+const DAYS_IT = ['Dom','Lun','Mar','Mer','Gio','Ven','Sab'];
+const DAYS_FULL = ['Domenica','Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato'];
+const MONTHS_IT = ['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'];
+
+function today() { return new Date().toISOString().slice(0,10); }
+function fmtDateIT(d) {
+  const dt = typeof d === 'string' ? new Date(d + 'T00:00:00') : d;
+  return `${dt.getDate()} ${MONTHS_IT[dt.getMonth()]} ${dt.getFullYear()}`;
+}
+function getMonday(d) {
+  const dt = new Date(d);
+  const day = dt.getDay();
+  dt.setDate(dt.getDate() - (day === 0 ? 6 : day - 1));
+  dt.setHours(0,0,0,0);
+  return dt;
+}
+function addDays(d, n) {
+  const dt = new Date(d);
+  dt.setDate(dt.getDate() + n);
+  return dt;
+}
+function fmtDate(d) { return d.toISOString().slice(0,10); }
+
+// ============================================================
+// BOOT
+// ============================================================
+async function boot() {
+  // Data header
+  const now = new Date();
+  document.getElementById('hdate').textContent = `${DAYS_FULL[now.getDay()]} ${now.getDate()} ${MONTHS_IT[now.getMonth()]} ${now.getFullYear()}`;
+
+  try {
+    const [rc, rs, rz] = await Promise.all([
       DB.from('comuni').select('*').order('nome'),
       DB.from('serbatoi').select('*').order('nome'),
       DB.from('zone').select('*').order('nome_zona'),
-      isAdm?DB.from('turni').select('*').order('data',{ascending:false})
-           :DB.from('turni').select('*').eq('pubblicato',true).order('data',{ascending:false})
     ]);
-    if(c.error)throw c.error;if(s.error)throw s.error;
-    if(z.error)throw z.error;if(t.error)throw t.error;
-    comuni=c.data||[];serbatoi=s.data||[];zone=z.data||[];turni=t.data||[];
-    fillSel();
-  }catch(e){toast('Errore caricamento: '+e.message,'e');}
-  finally{hl();}
-}
-function fillSel(){
-  const opts=comuni.map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
-  so('pcf','<option value="">Tutti i comuni</option>'+opts);
-  so('efc','<option value="">Tutti</option>'+opts);
-  so('zfc','<option value="">Tutti</option>'+opts);
-  so('mtc','<option value="">Seleziona...</option>'+opts);
-  so('mzc','<option value="">Seleziona...</option>'+opts);
-  so('mscc','<option value="">Seleziona...</option>'+opts);
-}
-const sBC=(cid)=>serbatoi.filter(s=>s.comune_id==cid);
-const zBS=(sid)=>zone.filter(z=>z.serbatoio_id==sid);
-const comZ=(zid)=>{const z=zone.find(z=>z.id==zid);if(!z)return null;const s=serbatoi.find(s=>s.id==z.serbatoio_id);return s?comuni.find(c=>c.id==s.comune_id):null;}
-const serbZ=(zid)=>{const z=zone.find(z=>z.id==zid);return z?serbatoi.find(s=>s.id==z.serbatoio_id):null;}
+    if (rc.error) throw rc.error;
+    comuni = rc.data; serbatoi = rs.data; zone = rz.data;
 
-function sv_(name){
-  if(!isAdm&&['dash','turni','zone','cs'].includes(name)){showLogin();return;}
-  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
-  document.querySelectorAll('.ntab').forEach(t=>t.classList.remove('active'));
-  const ve=document.getElementById('view-'+name);
-  const te=document.querySelector(`.ntab[data-v="${name}"]`);
-  if(ve)ve.classList.add('active');
-  if(te)te.classList.add('active');
-  if(name==='pub')renderPub();
-  if(name==='dash')renderDash();
-  if(name==='turni')renderTT();
-  if(name==='zone')renderZ();
-  if(name==='cs')renderCS();
-}
-// expose sv globally
-function sv(n){sv_(n);}
-
-/* ── PUBLIC ── */
-function setPM(m){pm=m;document.getElementById('tbo').classList.toggle('active',m==='oggi');document.getElementById('tbw').classList.toggle('active',m==='week');renderPub();}
-function tsP(tipo){
-  if(!tipo)return['spn','—'];
-  if(tipo==='H24')return['sph','H24'];
-  if(tipo==='manutenzione'||tipo==='guasto')return['spm',tipo==='guasto'?'Guasto':'Manut.'];
-  if(tipo==='rinviato')return['spr','Rinviato'];
-  if(tipo==='n/a')return['spn','N/A'];
-  if(tipo==='aperto')return['spa','Aperto'];
-  return['sps','—'];
-}
-function getTog(zid){return turni.find(t=>t.zona_id==zid&&t.data===td()&&t.pubblicato)||null;}
-function renderPub(){
-  document.getElementById('pdate').textContent=fD(td());
-  const q=(document.getElementById('pq').value||'').toLowerCase();
-  const cf=document.getElementById('pcf').value;
-  const body=document.getElementById('pbody');
-  const t0=td();
-  const clist=comuni.filter(c=>!cf||String(c.id)===cf);
-  let html='';
-  clist.forEach(com=>{
-    const serbs=sBC(com.id);
-    let shtml='';
-    serbs.forEach(serb=>{
-      const zs=zBS(serb.id).filter(z=>!q||(z.nome_zona+' '+(z.descrizione||'')+' '+com.nome+' '+(z.codice||'')).toLowerCase().includes(q));
-      if(!zs.length)return;
-      if(pm==='oggi'){
-        const cards=zs.map(z=>{
-          const t=getTog(z.id);
-          let cls='spn',lbl='—';
-          if(t){
-            if(t.tipo==='H24'){cls='sph';lbl='H24';}
-            else if(t.tipo==='manutenzione'){cls='spm';lbl='Manut.';}
-            else if(t.tipo==='guasto'){cls='spm';lbl='Guasto';}
-            else if(t.tipo==='rinviato'){cls='spr';lbl='Rinviato';}
-            else if(t.tipo==='n/a'){cls='spn';lbl='N/A';}
-            else if(t.tipo==='aperto'){cls='spa';lbl='Aperto';}
-            else if(t.tipo==='schedulato'){cls='sps';lbl=t.orario?t.orario.substring(0,5):'—';}
-          }
-          const desc=(z.descrizione||'').substring(0,80)+((z.descrizione||'').length>80?'…':'');
-          const nn=t&&t.note?`<div class="zcnote">⚠ ${t.note}</div>`:'';
-          return `<div class="zcard" onclick="showDet(${z.id})">
-            <div class="zctop"><span class="zcname">${z.nome_zona}</span><span class="sp ${cls}">${lbl}</span></div>
-            <div class="zcdesc">${desc||'—'}</div>${nn}
-          </div>`;
-        }).join('');
-        shtml+=`<div class="sttl">🏗 ${serb.nome}</div><div class="zgrid">${cards}</div>`;
-      } else {
-        const days=Array.from({length:7},(_,i)=>pD(i));
-        const hdrs=days.map(d=>{const isT=d===t0,dO=new Date(d+'T00:00:00');return`<th${isT?' class="tht"':''}>${DAYS[dO.getDay()].substring(0,3)}<br>${dO.getDate()}/${dO.getMonth()+1}</th>`;}).join('');
-        const rows=zs.map(z=>{
-          const cells=days.map(d=>{
-            const t=turni.find(t=>t.zona_id==z.id&&t.data===d&&t.pubblicato);
-            let cl='wcn',val='—';
-            if(t){if(t.tipo==='H24'){cl='wch';val='H24';}else if(t.tipo==='manutenzione'||t.tipo==='guasto'){cl='wcm';val=t.tipo==='guasto'?'Guasto':'Manut.';}else if(t.tipo==='rinviato'){cl='wcr';val='Rinv.';}else if(t.tipo==='aperto'){cl='wca';val='Aperto';}else if(t.tipo==='schedulato'){cl='wcs';val=t.orario?t.orario.substring(0,5):'—';}}
-            return`<td${d===t0?' class="tdc"':''}><span class="wc ${cl}">${val}</span></td>`;
-          }).join('');
-          return`<tr><td onclick="showDet(${z.id})" style="cursor:pointer">${z.nome_zona}<br><span style="font-size:10px;color:var(--txt3)">${(z.descrizione||'').substring(0,45)}${(z.descrizione||'').length>45?'…':''}</span></td>${cells}</tr>`;
-        }).join('');
-        shtml+=`<div class="sttl">🏗 ${serb.nome}</div><div class="ww"><table class="wtbl"><thead><tr><th>Zona</th>${hdrs}</tr></thead><tbody>${rows}</tbody></table></div>`;
-      }
+    // Popola select comuni
+    const sel = document.getElementById('cf');
+    comuni.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.id; opt.textContent = c.nome;
+      sel.appendChild(opt);
     });
-    if(!shtml)return;
-    html+=`<div class="cblk"><div class="cttl">📍 ${com.nome}${com.provincia?' ('+com.provincia+')':''}</div>${shtml}</div>`;
-  });
-  body.innerHTML=html||'<div style="text-align:center;padding:50px;color:var(--txt3)">Nessun risultato trovato.</div>';
-}
 
-function showDet(zid){
-  const z=zone.find(z=>z.id==zid);if(!z)return;
-  const serb=serbZ(zid),com=comZ(zid);
-  const t0=td();
-  const tList=turni.filter(t=>t.zona_id==zid&&t.pubblicato).sort((a,b)=>a.data.localeCompare(b.data));
-  const tOg=tList.find(t=>t.data===t0);
-  const tNx=tList.find(t=>t.data>t0);
-  function dr(l,v){if(!v&&v!==0)return'';return`<div class="drow"><div class="dlbl">${l}</div><div class="dval">${v}</div></div>`;}
-  let sth='';
-  if(tOg){
-    const[cl,lb]=tsP(tOg.tipo);
-    const ora=tOg.tipo==='schedulato'&&tOg.orario?`<span class="tc">${tOg.orario.substring(0,5)}</span>`:'';
-    const fine=tOg.orario_fine?` → ${tOg.orario_fine.substring(0,5)}`:'';
-    sth=`<div class="drow"><div class="dlbl">Stato oggi</div><div class="dval"><span class="sp ${cl}" style="font-size:13px;padding:5px 12px">${lb}</span> ${ora}${fine?'<span style="color:var(--txt2);font-size:12px;margin-left:4px">'+fine+'</span>':''}</div></div>`;
-    if(tOg.durata_ore)sth+=dr('Durata',tOg.durata_ore+' ore');
-    if(tOg.motivo)sth+=dr('Motivo',tOg.motivo);
-    if(tOg.descrizione)sth+=dr('Dettagli',tOg.descrizione);
-    if(tOg.prossima_data)sth+=dr('Pross. erogazioine',fD(tOg.prossima_data)+(tOg.prossima_ora?' ore '+tOg.prossima_ora.substring(0,5):''));
-    if(tOg.ditta)sth+=dr('Squadra',tOg.ditta);
-    if(tOg.pressione)sth+=dr('Pressione',tOg.pressione+' bar');
-    if(tOg.portata)sth+=dr('Portata',tOg.portata+' l/s');
-    if(tOg.note)sth+=`<div class="alw" style="margin-top:8px">⚠ ${tOg.note}</div>`;
-  } else {
-    sth='<div class="drow"><div class="dlbl">Stato oggi</div><div class="dval"><span class="sp spn">Nessuna informazione</span></div></div>';
-  }
-  let nxh='';
-  if(tNx){const[cl,lb]=tsP(tNx.tipo);nxh=dr('Prossimo turno',`${fD(tNx.data)}${tNx.orario?' ore '+tNx.orario.substring(0,5):''} — <span class="sp ${cl}" style="padding:2px 8px">${lb}</span>`);}
-  document.getElementById('detbody').innerHTML=`
-    <div style="margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--bord)">
-      <div style="font-size:17px;font-weight:800;color:var(--navy)">${z.nome_zona}</div>
-      <div style="font-size:13px;color:var(--txt2);margin-top:3px">${com?.nome||'—'} — ${serb?.nome||'—'}</div>
-    </div>
-    ${dr('Strade',z.descrizione)}${dr('Codice',z.codice?`<span class="tc">${z.codice}</span>`:'')}${dr('Frequenza',z.frequenza_erogazione)}
-    <div style="margin:12px 0;border-top:1px solid var(--bord);padding-top:12px">${sth}${nxh}</div>
-    <div style="font-size:11px;color:var(--txt3);text-align:center;margin-top:10px">Clicca fuori per chiudere</div>
-  `;
-  om('mo-det');
-}
-
-/* ── DASHBOARD ── */
-function renderDash(){
-  const t0=td();
-  document.getElementById('dstats').innerHTML=[
-    {n:comuni.length,l:'Comuni',c:'var(--blue)'},
-    {n:zone.length,l:'Zone totali',c:'var(--purple)'},
-    {n:turni.filter(t=>t.data===t0&&t.pubblicato).length,l:'Turni oggi',c:'var(--green)'},
-    {n:turni.filter(t=>t.data===t0&&(t.tipo==='manutenzione'||t.tipo==='guasto')).length,l:'Manutenzioni',c:'var(--orange)'},
-    {n:turni.filter(t=>!t.pubblicato).length,l:'Bozze',c:'var(--amber)'},
-    {n:turni.filter(t=>t.pubblicato).length,l:'Tot. pubblicati',c:'var(--green)'},
-  ].map(s=>`<div class="stat"><div class="stn" style="color:${s.c}">${s.n}</div><div class="stl">${s.l}</div></div>`).join('');
-  let rows='';
-  comuni.forEach(com=>{
-    const serbs=sBC(com.id),zids=serbs.flatMap(s=>zBS(s.id).map(z=>z.id));
-    const tOg=turni.filter(t=>zids.includes(t.zona_id)&&t.data===t0);
-    const sc=tOg.filter(t=>t.pubblicato&&t.tipo==='schedulato').length;
-    const h4=tOg.filter(t=>t.tipo==='H24').length;
-    const mn=tOg.filter(t=>t.tipo==='manutenzione'||t.tipo==='guasto').length;
-    const rv=tOg.filter(t=>t.tipo==='rinviato').length;
-    const bz=turni.filter(t=>zids.includes(t.zona_id)&&!t.pubblicato).length;
-    rows+=`<tr><td><strong>${com.nome}</strong></td><td>${zids.length}</td>
-      <td>${sc?`<span class="badge bp2">${sc}</span>`:'—'}</td>
-      <td>${h4?`<span class="badge bh">${h4}</span>`:'—'}</td>
-      <td>${mn?`<span class="badge bmanu">${mn}</span>`:'—'}</td>
-      <td>${rv?`<span class="badge brinv">${rv}</span>`:'—'}</td>
-      <td>${bz?`<span class="badge bd">${bz}</span>`:'—'}</td>
-      <td><button class="btn bsm" onclick="sv_('turni');ftc(${com.id})">Turni</button></td>
-    </tr>`;
-  });
-  document.getElementById('dtbl').innerHTML=rows||'<tr class="erow"><td colspan="8">Nessun dato.</td></tr>';
-}
-
-/* ── TURNI TABLE ── */
-function ftc(cid){document.getElementById('efc').value=cid;efls();renderTT();}
-function efls(){
-  const cid=document.getElementById('efc').value;
-  const serbs=cid?sBC(cid):serbatoi;
-  so('efs','<option value="">Tutti</option>'+serbs.map(s=>`<option value="${s.id}">${s.nome}</option>`).join(''));
-}
-function clrF(){['efc','efs','eft','efp'].forEach(id=>document.getElementById(id).value='');document.getElementById('efd1').value='';document.getElementById('efd2').value='';efls();renderTT();}
-function renderTT(){
-  const cid=document.getElementById('efc').value,sid=document.getElementById('efs').value;
-  const d1=document.getElementById('efd1').value,d2=document.getElementById('efd2').value;
-  const tipo=document.getElementById('eft').value,pub=document.getElementById('efp').value;
-  let list=turni.filter(t=>{
-    const z=zone.find(z=>z.id==t.zona_id);if(!z)return false;
-    const s=serbatoi.find(s=>s.id==z.serbatoio_id);if(!s)return false;
-    if(cid&&String(s.comune_id)!==cid)return false;
-    if(sid&&String(z.serbatoio_id)!==sid)return false;
-    if(d1&&t.data<d1)return false;if(d2&&t.data>d2)return false;
-    if(tipo&&t.tipo!==tipo)return false;
-    if(pub==='1'&&!t.pubblicato)return false;
-    if(pub==='0'&&t.pubblicato)return false;
-    return true;
-  }).sort((a,b)=>b.data.localeCompare(a.data));
-  document.getElementById('tcnt').textContent=list.length+' turni';
-  const tcls={schedulato:'bs2',H24:'bh',manutenzione:'bmanu',guasto:'bmanu',rinviato:'brinv','n/a':'bna',aperto:'bap'};
-  let rows='';
-  list.forEach(t=>{
-    const z=zone.find(z=>z.id==t.zona_id),s=z?serbatoi.find(s=>s.id==z.serbatoio_id):null,c=s?comuni.find(c=>c.id==s.comune_id):null;
-    const cl=tcls[t.tipo]||'bna',tl=t.tipo?t.tipo[0].toUpperCase()+t.tipo.slice(1):'—';
-    const ora=t.tipo==='schedulato'&&t.orario?`<span class="tc">${t.orario.substring(0,5)}</span>`:'—';
-    rows+=`<tr>
-      <td><span style="font-family:monospace;font-size:11px;color:var(--txt3)">${z?.codice||'—'}</span></td>
-      <td><strong>${c?.nome||'—'}</strong></td>
-      <td style="font-size:12px;color:var(--txt2)">${s?.nome||'—'}</td>
-      <td>${z?.nome_zona||'—'}</td>
-      <td>${t.data}</td><td>${ora}</td>
-      <td><span class="badge ${cl}">${tl}</span></td>
-      <td>${t.pubblicato?'<span class="badge bp2">Pub.</span>':'<span class="badge bd">Bozza</span>'}</td>
-      <td><div style="display:flex;gap:3px">
-        <button class="btn bic bsm" title="Modifica" onclick="openTM(${t.id})">✏️</button>
-        ${t.pubblicato?`<button class="btn bic bsm bo" title="Nascondi" onclick="togP(${t.id},false)">👁</button>`
-                      :`<button class="btn bic bsm bg" title="Pubblica" onclick="togP(${t.id},true)">📤</button>`}
-        <button class="btn bic bsm br" title="Elimina" onclick="delT(${t.id})">🗑</button>
-      </div></td>
-    </tr>`;
-  });
-  document.getElementById('ttbl').innerHTML=rows||'<tr class="erow"><td colspan="9">Nessun turno trovato.</td></tr>';
-}
-
-/* ── TURNO MODAL ── */
-function openTM(id=null){
-  eTid=id;
-  document.getElementById('mtt').textContent=id?'Modifica Turno':'Nuovo Turno';
-  const copts='<option value="">Seleziona...</option>'+comuni.map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
-  so('mtc',copts);
-  if(id){
-    const t=turni.find(t=>t.id==id);if(!t)return;
-    const z=zone.find(z=>z.id==t.zona_id),s=z?serbatoi.find(s=>s.id==z.serbatoio_id):null,c=s?comuni.find(c=>c.id==s.comune_id):null;
-    sv2('mtc',c?.id);mtls(s?.id);
-    setTimeout(()=>{sv2('mts',s?.id);mtlz(z?.id);
-      setTimeout(()=>{
-        sv2('mtz',z?.id);sv2('mtd',t.data);sv2('mtipo',t.tipo);
-        sv2('mora',t.orario?t.orario.substring(0,5):'08:00');
-        sv2('mfine',t.orario_fine?t.orario_fine.substring(0,5):'');
-        sv2('mdur',t.durata_ore||'');sv2('mmotivo',t.motivo||'');sv2('mdesc',t.descrizione||'');
-        sv2('mpd',t.prossima_data||'');sv2('mpo',t.prossima_ora?t.prossima_ora.substring(0,5):'');
-        sv2('mdit',t.ditta||'');sv2('mnote',t.note||'');sv2('mpres',t.pressione||'');sv2('mport',t.portata||'');
-        document.getElementById('mpub').checked=t.pubblicato;mttog();
-      },30);
-    },30);
-  } else {
-    ['mtc','mts','mtz','mmotivo','mdesc','mpd','mpo','mdit','mnote','mpres','mport','mfine','mdur'].forEach(id=>sv2(id,''));
-    sv2('mtd',td());sv2('mtipo','schedulato');sv2('mora','08:00');
-    document.getElementById('mpub').checked=false;
-    so('mts','<option value="">Seleziona...</option>');so('mtz','<option value="">Seleziona...</option>');mttog();
-  }
-  om('mo-t');
-}
-function mtls(pre=null){
-  const cid=document.getElementById('mtc').value;
-  so('mts','<option value="">Seleziona...</option>'+sBC(cid).map(s=>`<option value="${s.id}"${s.id==pre?' selected':''}>${s.nome}</option>`).join(''));
-  if(!pre)so('mtz','<option value="">Seleziona...</option>');
-}
-function mtlz(pre=null){
-  const sid=document.getElementById('mts').value;
-  so('mtz','<option value="">Seleziona...</option>'+zBS(sid).map(z=>`<option value="${z.id}"${z.id==pre?' selected':''}>${z.nome_zona}${z.codice?' ('+z.codice+')':''}</option>`).join(''));
-}
-function mttog(){
-  const tipo=document.getElementById('mtipo').value;
-  document.getElementById('morf').style.display=(tipo==='schedulato'||tipo==='aperto')?'block':'none';
-  document.getElementById('mdurf').style.display=(tipo==='schedulato')?'block':'none';
-  document.getElementById('mextra').style.display=(tipo==='manutenzione'||tipo==='guasto'||tipo==='rinviato')?'block':'none';
-}
-function gv(id){const e=document.getElementById(id);return e?e.value:'';}
-async function saveTurno(){
-  const zid=gv('mtz'),data=gv('mtd'),tipo=gv('mtipo');
-  if(!zid||!data){toast('Seleziona zona e data.','e');return;}
-  const btn=document.getElementById('mtsave');btn.disabled=true;
-  const p={
-    zona_id:parseInt(zid),data,tipo,
-    orario:(tipo==='schedulato'||tipo==='aperto')?gv('mora')||null:null,
-    orario_fine:gv('mfine')||null,
-    durata_ore:gv('mdur')?parseFloat(gv('mdur')):null,
-    motivo:gv('mmotivo')||null,descrizione:gv('mdesc')||null,
-    prossima_data:gv('mpd')||null,prossima_ora:gv('mpo')||null,
-    ditta:gv('mdit')||null,note:gv('mnote')||null,
-    pressione:gv('mpres')?parseFloat(gv('mpres')):null,
-    portata:gv('mport')?parseFloat(gv('mport')):null,
-    pubblicato:document.getElementById('mpub').checked,
-    updated_at:new Date().toISOString()
-  };
-  try{
-    let res;
-    if(eTid){res=await DB.from('turni').update(p).eq('id',eTid).select().single();}
-    else{res=await DB.from('turni').insert(p).select().single();}
-    if(res.error)throw res.error;
-    if(eTid)turni=turni.map(t=>t.id==eTid?res.data:t);else turni.unshift(res.data);
-    cm('mo-t');renderTT();toast(eTid?'Turno aggiornato.':'Turno salvato.','s');
-  }catch(e){toast('Errore: '+e.message,'e');}
-  finally{btn.disabled=false;}
-}
-async function togP(id,v){
-  const{data,error}=await DB.from('turni').update({pubblicato:v,updated_at:new Date().toISOString()}).eq('id',id).select().single();
-  if(error){toast('Errore: '+error.message,'e');return;}
-  turni=turni.map(t=>t.id==id?{...t,pubblicato:v}:t);renderTT();toast(v?'Pubblicato.':'Nascosto.','s');
-}
-async function delT(id){
-  if(!await conf2('Elimina turno','Azione irreversibile.'))return;
-  const{error}=await DB.from('turni').delete().eq('id',id);
-  if(error){toast('Errore: '+error.message,'e');return;}
-  turni=turni.filter(t=>t.id!==id);renderTT();toast('Eliminato.','i');
-}
-async function pubAll(){
-  if(!await conf2('Pubblica tutto','Tutti i turni in bozza diventeranno visibili.'))return;
-  sl('Pubblicazione...');
-  const{error}=await DB.from('turni').update({pubblicato:true,updated_at:new Date().toISOString()}).eq('pubblicato',false);
-  hl();if(error){toast('Errore: '+error.message,'e');return;}
-  turni=turni.map(t=>({...t,pubblicato:true}));renderTT();toast('Tutto pubblicato.','s');
-}
-
-/* ── ZONE ── */
-function renderZ(){
-  const cf=document.getElementById('zfc').value;
-  const zs=zone.filter(z=>{if(!cf)return true;const s=serbatoi.find(s=>s.id==z.serbatoio_id);return s&&String(s.comune_id)===cf;});
-  let rows='';
-  zs.forEach(z=>{
-    const s=serbatoi.find(s=>s.id==z.serbatoio_id),c=s?comuni.find(c=>c.id==s.comune_id):null;
-    rows+=`<tr>
-      <td><span style="font-family:monospace;font-size:11px;color:var(--txt3)">${z.codice||'—'}</span></td>
-      <td><strong>${c?.nome||'—'}</strong></td>
-      <td style="font-size:12px;color:var(--txt2)">${s?.nome||'—'}</td>
-      <td><strong>${z.nome_zona}</strong></td>
-      <td style="font-size:12px;color:var(--txt2);max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${z.descrizione||'—'}</td>
-      <td style="font-size:12px;color:var(--txt3)">${z.frequenza_erogazione||'—'}</td>
-      <td><div style="display:flex;gap:3px">
-        <button class="btn bic bsm" onclick="openZM(${z.id})">✏️</button>
-        <button class="btn bic bsm br" onclick="delZ(${z.id})">🗑</button>
-      </div></td>
-    </tr>`;
-  });
-  document.getElementById('ztbl').innerHTML=rows||'<tr class="erow"><td colspan="7">Nessuna zona.</td></tr>';
-}
-function openZM(id=null,psid=null){
-  eZid=id;
-  document.getElementById('mzt').textContent=id?'Modifica Zona':'Nuova Zona';
-  so('mzc','<option value="">Seleziona...</option>'+comuni.map(c=>`<option value="${c.id}">${c.nome}</option>`).join(''));
-  if(id){
-    const z=zone.find(z=>z.id==id);if(!z)return;
-    const s=serbatoi.find(s=>s.id==z.serbatoio_id),c=s?comuni.find(c=>c.id==s.comune_id):null;
-    sv2('mzc',c?.id);mzls();
-    setTimeout(()=>{sv2('mzs',z.serbatoio_id);sv2('mzcod',z.codice||'');sv2('mznome',z.nome_zona);sv2('mzdesc',z.descrizione||'');sv2('mzfreq',z.frequenza_erogazione||'');sv2('mzpres',z.pressione_tipica||'');sv2('mznote',z.note_interne||'');},30);
-  } else {
-    ['mzcod','mznome','mzdesc','mzfreq','mzpres','mznote'].forEach(id=>sv2(id,''));
-    if(psid){const s=serbatoi.find(s=>s.id==psid);if(s){sv2('mzc',s.comune_id);mzls();setTimeout(()=>sv2('mzs',psid),30);}}
-    else so('mzs','<option value="">Seleziona...</option>');
-  }
-  om('mo-z');
-}
-function mzls(){so('mzs','<option value="">Seleziona...</option>'+sBC(document.getElementById('mzc').value).map(s=>`<option value="${s.id}">${s.nome}</option>`).join(''));}
-async function saveZona(){
-  const sid=gv('mzs'),nome=gv('mznome').trim();
-  if(!sid||!nome){toast('Seleziona serbatoio e nome.','e');return;}
-  const p={serbatoio_id:parseInt(sid),nome_zona:nome,codice:gv('mzcod').trim()||null,descrizione:gv('mzdesc').trim()||null,frequenza_erogazione:gv('mzfreq')||null,pressione_tipica:gv('mzpres')?parseFloat(gv('mzpres')):null,note_interne:gv('mznote').trim()||null};
-  try{
-    let res;
-    if(eZid){res=await DB.from('zone').update(p).eq('id',eZid).select().single();if(res.error)throw res.error;zone=zone.map(z=>z.id==eZid?res.data:z);}
-    else{res=await DB.from('zone').insert(p).select().single();if(res.error)throw res.error;zone.push(res.data);}
-    cm('mo-z');renderZ();toast('Zona salvata.','s');
-  }catch(e){toast('Errore: '+e.message,'e');}
-}
-async function delZ(id){
-  if(!await conf2('Elimina zona','Verranno eliminati anche i turni collegati.'))return;
-  const{error}=await DB.from('zone').delete().eq('id',id);
-  if(error){toast('Errore: '+error.message,'e');return;}
-  zone=zone.filter(z=>z.id!==id);turni=turni.filter(t=>t.zona_id!==id);renderZ();toast('Eliminata.','i');
-}
-
-/* ── COMUNI / SERBATOI ── */
-function renderCS(){
-  let html='';
-  comuni.forEach(com=>{
-    const serbs=sBC(com.id);
-    const sh2=serbs.map(s=>{
-      const zs=zBS(s.id);
-      return`<div style="margin:8px 0 8px 14px;background:var(--blue-xl);border-radius:var(--rsm);padding:10px 14px">
-        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
-          <div>
-            <strong style="font-size:13px">🏗 ${s.nome}</strong>
-            ${s.capacita?`<span style="font-size:11px;color:var(--txt3);margin-left:8px">${s.capacita.toLocaleString()} m³</span>`:''}
-            ${s.quota?`<span style="font-size:11px;color:var(--txt3);margin-left:8px">${s.quota} m s.l.m.</span>`:''}
-            <div style="font-size:11px;color:var(--txt3);margin-top:2px">${zs.length} zone</div>
-          </div>
-          <div style="display:flex;gap:5px;flex-wrap:wrap">
-            <button class="btn bsm" onclick="openZM(null,${s.id})">+ Zona</button>
-            <button class="btn bic bsm" onclick="openSM(${s.id})">✏️</button>
-            <button class="btn bic bsm br" onclick="delS(${s.id})">🗑</button>
-          </div>
-        </div>
-        ${zs.length?`<div style="margin-top:8px;font-size:12px;color:var(--txt2)">${zs.map(z=>`<span style="margin-right:10px">• ${z.nome_zona}${z.codice?' <span style="color:var(--txt3)">('+z.codice+')</span>':''}</span>`).join('')}</div>`:''}
+    await loadTurni();
+  } catch(e) {
+    document.getElementById('body-content').innerHTML = `
+      <div class="empty">
+        <div class="empty-icon">⚠️</div>
+        <p>Errore di connessione. Riprova più tardi.</p>
       </div>`;
-    }).join('');
-    html+=`<div class="card"><div class="ch">
-      <h3 style="font-size:15px">📍 ${com.nome}${com.provincia?' ('+com.provincia+')':''}${com.codice_istat?` <span style="font-size:11px;color:var(--txt3)">[${com.codice_istat}]</span>`:''}
-        <span style="font-size:11px;color:var(--txt3);margin-left:8px">${serbs.length} serbatoi</span>
-      </h3>
-      <div style="display:flex;gap:5px">
-        <button class="btn bsm" onclick="openSM(null,${com.id})">+ Serbatoio</button>
-        <button class="btn bic bsm" onclick="openCM(${com.id})">✏️</button>
-        <button class="btn bic bsm br" onclick="delC(${com.id})">🗑</button>
-      </div>
-    </div><div class="cb">${sh2||'<p style="color:var(--txt3);font-size:13px">Nessun serbatoio.</p>'}</div></div>`;
-  });
-  document.getElementById('cstree').innerHTML=html||'<div style="text-align:center;padding:50px;color:var(--txt3)">Nessun comune. Clicca <strong>+ Comune</strong> per iniziare.</div>';
-}
-
-function openCM(id=null){
-  eCid=id;document.getElementById('mct').textContent=id?'Modifica Comune':'Nuovo Comune';
-  if(id){const c=comuni.find(c=>c.id==id);if(!c)return;sv2('mcnome',c.nome);sv2('mcprov',c.provincia||'');sv2('mcistat',c.codice_istat||'');sv2('mcnote',c.note||'');}
-  else['mcnome','mcprov','mcistat','mcnote'].forEach(id=>sv2(id,''));
-  om('mo-c');
-}
-async function saveComune(){
-  const nome=gv('mcnome').trim();if(!nome){toast('Inserisci il nome.','e');return;}
-  const p={nome,provincia:gv('mcprov').toUpperCase()||null,codice_istat:gv('mcistat').trim()||null,note:gv('mcnote').trim()||null};
-  try{
-    let res;
-    if(eCid){res=await DB.from('comuni').update(p).eq('id',eCid).select().single();if(res.error)throw res.error;comuni=comuni.map(c=>c.id==eCid?res.data:c);}
-    else{res=await DB.from('comuni').insert(p).select().single();if(res.error)throw res.error;comuni.push(res.data);comuni.sort((a,b)=>a.nome.localeCompare(b.nome));}
-    cm('mo-c');fillSel();renderCS();toast('Comune salvato.','s');
-  }catch(e){toast('Errore: '+e.message,'e');}
-}
-async function delC(id){
-  if(!await conf2('Elimina comune','Verranno eliminati anche serbatoi, zone e turni.'))return;
-  const{error}=await DB.from('comuni').delete().eq('id',id);
-  if(error){toast('Errore: '+error.message,'e');return;}
-  comuni=comuni.filter(c=>c.id!==id);serbatoi=serbatoi.filter(s=>s.comune_id!==id);
-  zone=zone.filter(z=>{const s=serbatoi.find(s=>s.id==z.serbatoio_id);return!!s;});
-  fillSel();renderCS();toast('Comune eliminato.','i');
-}
-
-function openSM(id=null,pcid=null){
-  eSid=id;
-  const title=id?'Modifica Serbatoio':'Nuovo Serbatoio';
-  document.getElementById('mst').textContent=title;
-  so('mscc','<option value="">Seleziona...</option>'+comuni.map(c=>`<option value="${c.id}">${c.nome}</option>`).join(''));
-  // Show/hide commune-change warning
-  let warn=document.getElementById('serb-comune-warn');
-  if(!warn){
-    warn=document.createElement('div');
-    warn.id='serb-comune-warn';
-    warn.className='alw';
-    warn.style.display='none';
-    warn.innerHTML='⚠ Stai cambiando il comune di questo serbatoio. Le zone collegate verranno spostate nel nuovo comune.';
-    document.getElementById('mscc').parentNode.after(warn);
   }
-  if(id){
-    const s=serbatoi.find(s=>s.id==id);if(!s)return;
-    const origCid=s.comune_id;
-    sv2('mscc',s.comune_id);sv2('msnome',s.nome);sv2('mscap',s.capacita||'');sv2('msquota',s.quota||'');sv2('msnote',s.note||'');
-    document.getElementById('mscc').onchange=function(){
-      warn.style.display=(this.value && this.value!=origCid)?'block':'none';
-    };
-    warn.style.display='none';
+}
+
+// ============================================================
+// CARICA TURNI
+// ============================================================
+async function loadTurni() {
+  const mon = getMonday(new Date());
+  const sun = addDays(mon, 6);
+  const { data, error } = await DB.from('turni')
+    .select('*')
+    .eq('pubblicato', true)
+    .gte('data', fmtDate(mon))
+    .lte('data', fmtDate(sun))
+    .order('data');
+  if (error) { console.error(error); return; }
+  turni = data;
+  render();
+}
+
+// ============================================================
+// RENDER
+// ============================================================
+function setMode(m) {
+  viewMode = m;
+  document.getElementById('tb-o').classList.toggle('active', m === 'oggi');
+  document.getElementById('tb-w').classList.toggle('active', m === 'week');
+  render();
+}
+
+function render() {
+  const q = document.getElementById('q').value.toLowerCase().trim();
+  const comuneFilter = document.getElementById('cf').value;
+  const t = today();
+  const el = document.getElementById('body-content');
+
+  // Filtra comuni
+  let filteredComuni = comuni;
+  if (comuneFilter) filteredComuni = comuni.filter(c => String(c.id) === String(comuneFilter));
+
+  // Filtra turni per modalità
+  let filteredTurni = turni;
+  if (viewMode === 'oggi') filteredTurni = turni.filter(t2 => t2.data === t);
+
+  // Filtra per ricerca testo
+  if (q) {
+    const matchZone = zone.filter(z =>
+      (z.nome_zona||'').toLowerCase().includes(q) ||
+      (z.descrizione||'').toLowerCase().includes(q) ||
+      (z.codice||'').toLowerCase().includes(q)
+    ).map(z => z.id);
+    const matchComuni = comuni.filter(c => c.nome.toLowerCase().includes(q)).map(c => c.id);
+    const matchSerb = serbatoi.filter(s =>
+      s.nome.toLowerCase().includes(q) || matchComuni.includes(s.comune_id)
+    ).map(s => s.id);
+    const allMatchZone = zone.filter(z => matchZone.includes(z.id) || matchSerb.includes(z.serbatoio_id)).map(z => z.id);
+    filteredTurni = filteredTurni.filter(t2 => allMatchZone.includes(t2.zona_id));
+    if (matchComuni.length) filteredComuni = filteredComuni.filter(c => matchComuni.includes(c.id) || filteredTurni.some(t2 => {
+      const z2 = zone.find(z3 => z3.id === t2.zona_id);
+      const s2 = z2 ? serbatoi.find(s3 => s3.id === z2.serbatoio_id) : null;
+      return s2 && s2.comune_id === c.id;
+    }));
+  }
+
+  if (!filteredTurni.length) {
+    el.innerHTML = `<div class="empty">
+      <div class="empty-icon">💧</div>
+      <p>${viewMode === 'oggi' ? 'Nessun turno programmato per oggi.' : 'Nessun turno trovato per questa settimana.'}</p>
+      ${q ? `<p style="margin-top:8px;font-size:13px">Prova a modificare la ricerca.</p>` : ''}
+    </div>`;
+    return;
+  }
+
+  let html = '';
+
+  if (viewMode === 'oggi') {
+    html += `<div class="info-strip">📅 Turni di oggi — ${fmtDateIT(t)}</div>`;
+    filteredComuni.forEach(c => {
+      const mySerb = serbatoi.filter(s => s.comune_id === c.id);
+      const myZoneIds = zone.filter(z => mySerb.map(s=>s.id).includes(z.serbatoio_id)).map(z=>z.id);
+      const comuneTurni = filteredTurni.filter(t2 => myZoneIds.includes(t2.zona_id));
+      if (!comuneTurni.length) return;
+
+      html += `<div class="comune-section">
+        <div class="comune-title">
+          <h2>📍 ${c.nome}</h2>
+          <span class="comune-badge">${comuneTurni.length} turni oggi</span>
+        </div>`;
+
+      mySerb.forEach(s => {
+        const sZone = zone.filter(z => z.serbatoio_id === s.id);
+        const serbTurni = comuneTurni.filter(t2 => sZone.map(z=>z.id).includes(t2.zona_id));
+        if (!serbTurni.length) return;
+
+        html += `<div class="serb-label">📦 ${s.nome}</div><div class="turno-list">`;
+        serbTurni.forEach(t2 => {
+          const z = zone.find(z2 => z2.id === t2.zona_id);
+          const iconMap = {schedulato:'🕐',H24:'🔵',guasto:'🔴',sospeso:'🟡'};
+          const orario = t2.tipo === 'schedulato'
+            ? (t2.orario ? t2.orario.substring(0,5) + (t2.orario_fine ? '–'+t2.orario_fine.substring(0,5) : '') : '—')
+            : t2.tipo.toUpperCase();
+          html += `<div class="turno-card">
+            <div class="tc-badge ${t2.tipo}">
+              <div class="tc-icon">${iconMap[t2.tipo]||'💧'}</div>
+              <div>${t2.tipo === 'schedulato' ? 'ORE' : t2.tipo.toUpperCase()}</div>
+            </div>
+            <div class="tc-info">
+              <div class="tc-zona">${z?.nome_zona||'—'}</div>
+              <div class="tc-desc">${(z?.descrizione||'').substring(0,70)}${(z?.descrizione||'').length>70?'…':''}</div>
+              ${t2.note ? `<div class="tc-note">⚠️ ${t2.note}</div>` : ''}
+            </div>
+            <div class="tc-right">
+              <div class="tc-orario">${orario}</div>
+              <span class="pill pill-${t2.tipo}">${t2.tipo}</span>
+            </div>
+          </div>`;
+        });
+        html += `</div>`;
+      });
+      html += `</div>`;
+    });
   } else {
-    ['msnome','mscap','msquota','msnote'].forEach(id=>sv2(id,''));
-    if(pcid)sv2('mscc',pcid);
-    if(warn)warn.style.display='none';
-    document.getElementById('mscc').onchange=null;
+    // VISTA SETTIMANA
+    const mon = getMonday(new Date());
+    const weekDates = Array.from({length:7}, (_,i) => fmtDate(addDays(mon, i)));
+    const todayStr = today();
+
+    filteredComuni.forEach(c => {
+      const mySerb = serbatoi.filter(s => s.comune_id === c.id);
+      const myZone2 = zone.filter(z => mySerb.map(s=>s.id).includes(z.serbatoio_id));
+      const myZoneIds = myZone2.map(z=>z.id);
+      const comuneTurni = filteredTurni.filter(t2 => myZoneIds.includes(t2.zona_id));
+      if (!comuneTurni.length) return;
+
+      html += `<div class="comune-section">
+        <div class="comune-title">
+          <h2>📍 ${c.nome}</h2>
+        </div>
+        <div class="week-grid"><table class="wg-table">
+        <thead><tr>
+          <th>Zona</th>
+          ${weekDates.map((d,i) => {
+            const dt = addDays(mon, i);
+            return `<th class="${d===todayStr?'th-today':''}">${DAYS_IT[dt.getDay()]}<br><small style="font-weight:400;opacity:.8">${dt.getDate()}/${dt.getMonth()+1}</small></th>`;
+          }).join('')}
+        </tr></thead><tbody>`;
+
+      mySerb.forEach(s => {
+        const sZone = myZone2.filter(z => z.serbatoio_id === s.id);
+        const serbTurni = comuneTurni.filter(t2 => sZone.map(z=>z.id).includes(t2.zona_id));
+        if (!serbTurni.length) return;
+
+        html += `<tr class="wg-serb-row"><td colspan="8">📦 ${s.nome}</td></tr>`;
+        sZone.forEach(z => {
+          const zTurni = serbTurni.filter(t2 => t2.zona_id === z.id);
+          if (!zTurni.length) return;
+          html += `<tr><td title="${z.descrizione||''}">${z.nome_zona}</td>`;
+          weekDates.forEach(d => {
+            const dt2 = zTurni.find(t2 => t2.data === d);
+            const isTod = d === todayStr;
+            if (dt2) {
+              const colMap = {schedulato:'background:var(--blue-l);color:var(--blue)',H24:'background:var(--green-l);color:var(--green)',guasto:'background:var(--red-l);color:var(--red)',sospeso:'background:var(--amber-l);color:var(--amber)'};
+              const label = dt2.tipo === 'schedulato'
+                ? (dt2.orario ? dt2.orario.substring(0,5) : 'Sched.')
+                : dt2.tipo.toUpperCase();
+              html += `<td class="${isTod?'td-today':''}"><span class="wg-chip" style="${colMap[dt2.tipo]||''}">${label}</span></td>`;
+            } else {
+              html += `<td class="${isTod?'td-today':''}"><span style="color:var(--txt3);font-size:12px">—</span></td>`;
+            }
+          });
+          html += `</tr>`;
+        });
+      });
+
+      html += `</tbody></table></div></div>`;
+    });
   }
-  om('mo-s');
-}
-async function saveSerb(){
-  const cid=gv('mscc'),nome=gv('msnome').trim();if(!cid||!nome){toast('Seleziona comune e nome.','e');return;}
-  const p={comune_id:parseInt(cid),nome,capacita:gv('mscap')?parseInt(gv('mscap')):null,quota:gv('msquota')?parseInt(gv('msquota')):null,note:gv('msnote').trim()||null};
-  try{
-    let res;
-    if(eSid){res=await DB.from('serbatoi').update(p).eq('id',eSid).select().single();if(res.error)throw res.error;serbatoi=serbatoi.map(s=>s.id==eSid?res.data:s);}
-    else{res=await DB.from('serbatoi').insert(p).select().single();if(res.error)throw res.error;serbatoi.push(res.data);}
-    cm('mo-s');renderCS();toast('Serbatoio salvato.','s');
-  }catch(e){toast('Errore: '+e.message,'e');}
-}
-async function delS(id){
-  const s=serbatoi.find(s=>s.id==id);
-  const c=s?comuni.find(c=>c.id==s.comune_id):null;
-  const zCount=zone.filter(z=>z.serbatoio_id==id).length;
-  if(!await conf2(
-    'Elimina serbatoio',
-    `Stai eliminando "${s?.nome}" (${c?.nome||'?'}). Verranno eliminate anche ${zCount} zone e tutti i turni collegati. Il comune NON verrà eliminato.`
-  ))return;
-  const{error}=await DB.from('serbatoi').delete().eq('id',id);
-  if(error){toast('Errore: '+error.message,'e');return;}
-  serbatoi=serbatoi.filter(s=>s.id!==id);
-  zone=zone.filter(z=>z.serbatoio_id!==id);
-  turni=turni.filter(t=>{
-    const z=zone.find(z=>z.id==t.zona_id);
-    return !!z;
-  });
-  renderCS();
-  toast(`Serbatoio eliminato. Il comune "${c?.nome}" è ancora presente.`,'i');
+
+  el.innerHTML = html || `<div class="empty"><div class="empty-icon">💧</div><p>Nessun turno trovato.</p></div>`;
 }
 
 boot();
