@@ -3,1043 +3,1272 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>💧 Turni Idrici</title>
+<title>Editor Turni — Tecnici</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --navy:#0f2744;--blue:#2563eb;--blue-h:#1d4ed8;--blue-l:#dbeafe;--blue-xl:#eff6ff;
-  --green:#059669;--green-l:#d1fae5;--amber:#d97706;--amber-l:#fef3c7;
-  --red:#dc2626;--red-l:#fee2e2;--orange:#ea580c;--orange-l:#ffedd5;
-  --purple:#7c3aed;--purple-l:#ede9fe;
-  --bg:#f1f5f9;--surf:#fff;--surf2:#f8fafc;--bord:#e2e8f0;--bord2:#cbd5e1;
-  --txt:#0f172a;--txt2:#475569;--txt3:#94a3b8;
-  --r:10px;--rsm:6px;--rlg:14px;
+  --bg:#0f1117;--surf:#181c27;--surf2:#1e2333;--surf3:#242a3d;
+  --bord:#2a3050;--bord2:#3a4266;
+  --blue:#3b82f6;--blue-h:#2563eb;--blue-l:rgba(59,130,246,.12);
+  --green:#10b981;--green-l:rgba(16,185,129,.12);
+  --amber:#f59e0b;--amber-l:rgba(245,158,11,.12);
+  --red:#ef4444;--red-l:rgba(239,68,68,.12);
+  --purple:#8b5cf6;--purple-l:rgba(139,92,246,.12);
+  --cyan:#06b6d4;--cyan-l:rgba(6,182,212,.12);
+  --txt:#e2e8f0;--txt2:#94a3b8;--txt3:#4a5568;
+  --r:8px;--r-lg:12px;--r-sm:5px;
+  --shadow:0 4px 20px rgba(0,0,0,.4);
 }
 html{scroll-behavior:smooth}
 body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--txt);font-size:14px;line-height:1.5;min-height:100vh}
-#loader{position:fixed;inset:0;background:rgba(255,255,255,.92);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px}
-#loader.h{display:none}
-.spin{width:36px;height:36px;border:3px solid var(--bord);border-top-color:var(--blue);border-radius:50%;animation:sp .7s linear infinite}
-@keyframes sp{to{transform:rotate(360deg)}}
-#toasts{position:fixed;bottom:20px;right:20px;z-index:9998;display:flex;flex-direction:column;gap:8px}
-.toast{padding:11px 16px;border-radius:var(--r);font-size:13px;font-weight:500;color:#fff;animation:tin .2s ease;max-width:340px}
-.toast.s{background:var(--green)}.toast.e{background:var(--red)}.toast.i{background:var(--blue)}
-@keyframes tin{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
-#login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--navy) 0%,#1e40af 100%)}
-#login-wrap.h{display:none}
-.lbox{background:var(--surf);border-radius:var(--rlg);padding:40px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,.25)}
-.lbox .ico{font-size:48px;text-align:center}
-.lbox h1{font-size:22px;font-weight:800;color:var(--navy);text-align:center;margin-top:8px}
-.lbox p{color:var(--txt2);font-size:13px;text-align:center;margin:4px 0 22px}
-.lerr{background:var(--red-l);color:var(--red);border-radius:var(--rsm);padding:10px 14px;font-size:13px;margin-bottom:14px;display:none}
-.lerr.show{display:block}
-#app{display:none;flex-direction:column;min-height:100vh}
-#app.show{display:flex}
-nav{background:var(--navy);display:flex;align-items:center;height:54px;position:sticky;top:0;z-index:500;box-shadow:0 2px 8px rgba(0,0,0,.2)}
-.nbrand{color:#fff;font-weight:800;font-size:16px;padding:0 18px;display:flex;align-items:center;gap:8px;white-space:nowrap;border-right:1px solid rgba(255,255,255,.1);height:100%}
-.ntabs{display:flex;height:100%;flex:1;overflow-x:auto}
-.ntab{padding:0 15px;color:rgba(255,255,255,.6);cursor:pointer;display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500;border:none;background:none;height:100%;white-space:nowrap;border-bottom:3px solid transparent;position:relative;top:3px;transition:all .15s}
-.ntab:hover{background:rgba(255,255,255,.07);color:#fff}
-.ntab.active{color:#fff;border-bottom-color:#60a5fa;background:rgba(255,255,255,.08)}
-.ntab.adm{display:none}
-.nright{margin-left:auto;padding:0 14px;display:flex;align-items:center;gap:8px;flex-shrink:0}
-.nuser{color:rgba(255,255,255,.6);font-size:12px;display:none}
-.nuser.show{display:block}
-.nbtn{color:rgba(255,255,255,.7);font-size:12px;cursor:pointer;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);border-radius:var(--rsm);padding:5px 12px;transition:all .15s;font-family:inherit}
-.nbtn:hover{background:rgba(255,255,255,.15);color:#fff}
-.view{display:none;padding:22px;max-width:1300px;margin:0 auto;width:100%}
-.view.active{display:block}
-.ph{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px}
-.ph h2{font-size:20px;font-weight:800;color:var(--navy)}
-.ph p{color:var(--txt2);font-size:13px;margin-top:3px}
-.field{margin-bottom:12px}
-.field label{display:block;font-size:11px;font-weight:700;color:var(--txt2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px}
-.field input,.field select,.field textarea{width:100%;padding:8px 11px;border:1.5px solid var(--bord);border-radius:var(--rsm);font-size:13px;font-family:inherit;background:var(--surf);color:var(--txt);outline:none;transition:border-color .15s}
-.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.1)}
-.field textarea{resize:vertical;min-height:68px}
-.fr2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.fr3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
-.chk{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500}
-.chk input{width:16px;height:16px;cursor:pointer;accent-color:var(--blue)}
-.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 15px;border-radius:var(--rsm);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;border:1.5px solid var(--bord);background:var(--surf);color:var(--txt);transition:all .15s;white-space:nowrap}
-.btn:hover{background:var(--surf2);border-color:var(--bord2)}
-.btn:active{transform:scale(.98)}
-.btn:disabled{opacity:.5;pointer-events:none}
-.bp{background:var(--blue);color:#fff;border-color:var(--blue)}.bp:hover{background:var(--blue-h);border-color:var(--blue-h)}
-.bg{background:var(--green);color:#fff;border-color:var(--green)}.bg:hover{filter:brightness(1.1)}
-.br{color:var(--red);border-color:#fca5a5}.br:hover{background:var(--red-l)}
-.bo{color:var(--orange);border-color:#fdba74}.bo:hover{background:var(--orange-l)}
-.bsm{padding:5px 10px;font-size:12px}
-.blg{padding:11px 22px;font-size:15px}
-.bic{padding:6px;border-radius:var(--rsm)}
-.card{background:var(--surf);border-radius:var(--r);border:1px solid var(--bord);overflow:hidden;margin-bottom:18px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
-.ch{padding:13px 16px;border-bottom:1px solid var(--bord);display:flex;align-items:center;justify-content:space-between;background:var(--surf2)}
-.ch h3{font-size:14px;font-weight:700}
-.cb{padding:16px}
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:22px}
-.stat{background:var(--surf);border-radius:var(--r);padding:16px;border:1px solid var(--bord)}
-.stn{font-size:26px;font-weight:800}
-.stl{font-size:11px;color:var(--txt3);margin-top:3px;text-transform:uppercase;letter-spacing:.4px}
-.tw{overflow-x:auto}
-table{width:100%;border-collapse:collapse;font-size:13px}
-thead th{background:var(--surf2);padding:9px 13px;text-align:left;font-weight:700;color:var(--txt2);font-size:11px;text-transform:uppercase;letter-spacing:.5px;border-bottom:2px solid var(--bord);white-space:nowrap}
-tbody tr{border-bottom:1px solid var(--bord);transition:background .1s}
-tbody tr:last-child{border-bottom:none}
-tbody tr:hover{background:var(--blue-xl)}
-tbody td{padding:10px 13px;vertical-align:middle}
-.erow td{text-align:center;padding:40px;color:var(--txt3)}
-.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap}
-.bp2{background:var(--green-l);color:#065f46}
-.bd{background:var(--amber-l);color:#92400e}
-.bna{background:#f1f5f9;color:#64748b}
-.bh{background:var(--blue-l);color:#1e40af}
-.bs2{background:var(--purple-l);color:#5b21b6}
-.brinv{background:var(--red-l);color:#991b1b}
-.bmanu{background:var(--orange-l);color:#9a3412}
-.bap{background:var(--green-l);color:#065f46}
-.tc{display:inline-flex;align-items:center;padding:3px 8px;border-radius:var(--rsm);font-size:12px;font-weight:800;background:var(--blue-l);color:var(--blue-h);font-family:monospace}
-.mo{display:none;position:fixed;inset:0;background:rgba(15,39,68,.55);z-index:1000;align-items:center;justify-content:center;backdrop-filter:blur(2px)}
-.mo.open{display:flex}
-.modal{background:var(--surf);border-radius:var(--rlg);width:600px;max-width:96vw;max-height:92vh;overflow-y:auto;padding:26px;position:relative;animation:min .2s ease}
-.modal.wide{width:720px}
-@keyframes min{from{transform:translateY(14px);opacity:0}to{transform:translateY(0);opacity:1}}
-.mh{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
-.mh h2{font-size:17px;font-weight:800}
-.mcl{background:none;border:none;cursor:pointer;color:var(--txt3);font-size:22px;padding:2px 6px;border-radius:var(--rsm)}
-.mcl:hover{background:var(--surf2);color:var(--txt)}
-.mftr{display:flex;justify-content:flex-end;gap:10px;margin-top:20px;padding-top:16px;border-top:1px solid var(--bord)}
-.cw{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:2000;align-items:center;justify-content:center}
-.cw.open{display:flex}
-.cbox{background:var(--surf);border-radius:var(--rlg);padding:26px;width:340px;max-width:95vw}
-.cbox h3{font-size:15px;font-weight:700;margin-bottom:7px}
-.cbox p{color:var(--txt2);font-size:13px;margin-bottom:18px}
-.cacts{display:flex;gap:10px;justify-content:flex-end}
-.fbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:flex-end}
-.fg{display:flex;flex-direction:column;gap:3px}
-.fg label{font-size:11px;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:.4px}
-.fg select,.fg input{padding:7px 10px;border:1.5px solid var(--bord);border-radius:var(--rsm);font-size:13px;font-family:inherit;background:var(--surf);color:var(--txt);outline:none}
-.fg select:focus,.fg input:focus{border-color:var(--blue)}
-/* PUBLIC */
-.phero{background:linear-gradient(135deg,var(--navy) 0%,#1d4ed8 100%);color:#fff;padding:34px 22px;text-align:center;margin:-22px -22px 24px}
-.phero h1{font-size:26px;font-weight:900;margin-bottom:5px}
-.phero p{opacity:.75;font-size:14px}
-.pmeta{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.12);border-radius:999px;padding:5px 14px;font-size:12px;margin-top:10px;color:rgba(255,255,255,.85)}
-.psbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;align-items:center}
-.psearch{flex:1;min-width:180px;padding:10px 14px;border:1.5px solid var(--bord);border-radius:var(--r);font-size:14px;font-family:inherit;background:var(--surf);color:var(--txt);outline:none}
-.psearch:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.1)}
-.tgrp{display:flex;gap:3px;background:var(--surf2);border-radius:var(--rsm);padding:3px;border:1px solid var(--bord)}
-.tbtn{padding:5px 13px;border-radius:calc(var(--rsm) - 2px);border:none;background:transparent;font-size:12px;font-weight:600;cursor:pointer;color:var(--txt3);transition:all .15s}
-.tbtn.active{background:var(--surf);color:var(--txt);box-shadow:0 1px 4px rgba(0,0,0,.1)}
-.cblk{margin-bottom:30px}
-.cttl{font-size:16px;font-weight:800;color:var(--navy);margin-bottom:12px;display:flex;align-items:center;gap:7px;border-bottom:2px solid var(--blue-l);padding-bottom:7px}
-.sttl{font-size:11px;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:.6px;margin:10px 0 8px}
-.zgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
-.zcard{background:var(--surf);border:1px solid var(--bord);border-radius:var(--r);padding:13px;cursor:pointer;transition:box-shadow .15s,border-color .15s}
-.zcard:hover{box-shadow:0 2px 12px rgba(37,99,235,.1);border-color:var(--bord2)}
-.zctop{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px}
-.zcname{font-weight:800;font-size:13px}
-.zcdesc{font-size:11px;color:var(--txt3);line-height:1.5}
-.zcnote{font-size:11px;color:var(--orange);margin-top:5px;font-weight:600}
-.sp{padding:4px 10px;border-radius:999px;font-size:12px;font-weight:800;white-space:nowrap}
-.sps{background:var(--blue-l);color:#1e40af}
-.sph{background:var(--green-l);color:#065f46}
-.spn{background:#f1f5f9;color:#94a3b8}
-.spr{background:var(--red-l);color:#991b1b}
-.spm{background:var(--orange-l);color:#9a3412}
-.spa{background:var(--green-l);color:#065f46}
-.drow{display:flex;gap:8px;margin-bottom:10px;align-items:flex-start}
-.dlbl{font-size:11px;font-weight:700;color:var(--txt3);text-transform:uppercase;letter-spacing:.4px;min-width:110px;padding-top:2px}
-.dval{font-size:13px;color:var(--txt)}
-.ww{overflow-x:auto}
-.wtbl{width:100%;border-collapse:collapse;min-width:700px;font-size:12px}
-.wtbl th{background:var(--navy);color:#fff;padding:8px 10px;text-align:center;font-size:11px;font-weight:600}
-.wtbl th:first-child{text-align:left;min-width:160px}
-.wtbl td{padding:7px 10px;border-bottom:1px solid var(--bord);border-right:1px solid var(--bord)}
-.wtbl td:first-child{background:var(--surf2);font-weight:600;color:var(--txt2);font-size:11px}
-.wtbl tr:hover td{background:var(--blue-xl)}
-.wc{display:inline-block;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700}
-.wcs{background:var(--blue-l);color:#1e40af}
-.wch{background:var(--green-l);color:#065f46}
-.wcn{background:#f1f5f9;color:var(--txt3)}
-.wcr{background:var(--red-l);color:#991b1b}
-.wcm{background:var(--orange-l);color:#9a3412}
-.wca{background:var(--green-l);color:#065f46}
-.tdc{background:var(--blue-xl)}
-.tht{background:var(--blue-h) !important}
-.alw{background:var(--amber-l);color:#92400e;border:1px solid #fcd34d;border-radius:var(--r);padding:10px 14px;font-size:13px;margin-top:8px}
-.als{background:var(--green-l);color:#065f46;border:1px solid #6ee7b7;border-radius:var(--r);padding:10px 14px;font-size:13px;margin-top:8px}
-/* SQL block */
-.sqlblk{background:var(--navy);color:#a5f3fc;border-radius:var(--rsm);padding:14px;font-family:monospace;font-size:11px;line-height:1.8;margin:10px 0;overflow-x:auto;white-space:pre;cursor:pointer}
-.sqlblk:hover{opacity:.9}
+
+/* TOPBAR */
+.topbar{background:var(--surf);border-bottom:1px solid var(--bord);padding:0 20px;height:56px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:100}
+.topbar-logo{font-size:15px;font-weight:700;color:#fff;display:flex;align-items:center;gap:8px}
+.topbar-logo svg{color:var(--blue)}
+.topbar-sep{flex:1}
+.topbar-week{display:flex;align-items:center;gap:8px;background:var(--surf2);border:1px solid var(--bord);border-radius:var(--r);padding:6px 12px;font-size:13px;font-weight:600;color:var(--txt)}
+.topbar-week button{background:none;border:none;color:var(--txt2);cursor:pointer;padding:2px 6px;border-radius:4px;font-size:16px;transition:.15s}
+.topbar-week button:hover{background:var(--bord);color:var(--txt)}
+.badge-week{background:var(--blue-l);color:var(--blue);font-size:11px;padding:2px 8px;border-radius:20px;font-weight:700}
+
+/* LAYOUT */
+.layout{display:grid;grid-template-columns:260px 1fr;min-height:calc(100vh - 56px)}
+
+/* SIDEBAR */
+.sidebar{background:var(--surf);border-right:1px solid var(--bord);padding:16px 0;overflow-y:auto;max-height:calc(100vh - 56px);position:sticky;top:56px}
+.sidebar-section{padding:0 12px 8px}
+.sidebar-label{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--txt3);padding:8px 8px 4px}
+.comune-btn{width:100%;background:none;border:none;text-align:left;padding:8px 10px;border-radius:var(--r-sm);cursor:pointer;color:var(--txt2);font-size:13px;display:flex;align-items:center;justify-content:space-between;transition:.15s;font-family:inherit}
+.comune-btn:hover{background:var(--surf3);color:var(--txt)}
+.comune-btn.active{background:var(--blue-l);color:var(--blue);font-weight:600}
+.comune-btn .cnt{font-size:11px;background:var(--surf3);padding:1px 7px;border-radius:10px}
+.comune-btn.active .cnt{background:var(--blue);color:#fff}
+.sidebar-search{width:100%;background:var(--surf2);border:1px solid var(--bord);border-radius:var(--r-sm);padding:7px 10px;color:var(--txt);font-size:13px;margin-bottom:8px;outline:none;font-family:inherit}
+.sidebar-search:focus{border-color:var(--blue)}
+
+/* MAIN */
+.main{padding:20px;overflow-x:auto}
+
+/* TOOLBAR */
+.toolbar{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.toolbar-title{font-size:18px;font-weight:700;color:#fff;flex:1;min-width:200px}
+.toolbar-title span{color:var(--blue)}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:var(--r);border:1px solid transparent;font-size:13px;font-weight:600;cursor:pointer;transition:.15s;font-family:inherit;white-space:nowrap}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn-primary{background:var(--blue);color:#fff;border-color:var(--blue)}
+.btn-primary:hover:not(:disabled){background:var(--blue-h)}
+.btn-ghost{background:var(--surf2);color:var(--txt2);border-color:var(--bord)}
+.btn-ghost:hover:not(:disabled){background:var(--surf3);color:var(--txt)}
+.btn-green{background:var(--green-l);color:var(--green);border-color:rgba(16,185,129,.3)}
+.btn-green:hover:not(:disabled){background:rgba(16,185,129,.2)}
+.btn-amber{background:var(--amber-l);color:var(--amber);border-color:rgba(245,158,11,.3)}
+.btn-amber:hover:not(:disabled){background:rgba(245,158,11,.2)}
+.btn-red{background:var(--red-l);color:var(--red);border-color:rgba(239,68,68,.3)}
+.btn-red:hover:not(:disabled){background:rgba(239,68,68,.2)}
+.btn-purple{background:var(--purple-l);color:var(--purple);border-color:rgba(139,92,246,.3)}
+.btn-purple:hover:not(:disabled){background:rgba(139,92,246,.2)}
+.btn-sm{padding:5px 10px;font-size:12px}
+.btn-icon{padding:7px;width:34px;height:34px;justify-content:center}
+
+/* ALERT BANNER */
+.alert{padding:10px 14px;border-radius:var(--r);font-size:13px;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.alert-info{background:var(--blue-l);color:var(--blue);border:1px solid rgba(59,130,246,.2)}
+.alert-success{background:var(--green-l);color:var(--green);border:1px solid rgba(16,185,129,.2)}
+
+/* SETTIMANA HEADER */
+.week-header{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:1px;background:var(--bord);border-radius:var(--r-lg) var(--r-lg) 0 0;overflow:hidden;margin-bottom:1px}
+.week-day{background:var(--surf2);padding:10px 8px;text-align:center}
+.week-day .day-name{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--txt3)}
+.week-day .day-date{font-size:13px;font-weight:600;color:var(--txt);margin-top:2px}
+.week-day.today{background:var(--blue-l)}
+.week-day.today .day-date{color:var(--blue)}
+
+/* GRIGLIA TURNI */
+.grid-wrap{background:var(--bord);border-radius:0 0 var(--r-lg) var(--r-lg);overflow:hidden;margin-bottom:20px}
+.grid-row{display:grid;grid-template-columns:220px repeat(7,1fr);gap:1px;background:var(--bord)}
+.grid-row-header{background:var(--surf);display:grid;grid-template-columns:220px repeat(7,1fr);gap:1px;background:var(--bord)}
+.grid-zona-label{background:var(--surf2);padding:10px 12px;display:flex;flex-direction:column;justify-content:center}
+.grid-zona-label .z-serb{font-size:10px;color:var(--txt3);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.grid-zona-label .z-nome{font-size:12px;font-weight:700;color:var(--txt);margin-top:1px}
+.grid-zona-label .z-desc{font-size:11px;color:var(--txt2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:190px}
+.grid-cell{background:var(--surf);padding:6px;cursor:pointer;transition:.1s;position:relative;min-height:58px;display:flex;flex-direction:column;gap:4px}
+.grid-cell:hover{background:var(--surf3)}
+.grid-cell.selected-zone-row{background:rgba(59,130,246,.05)}
+.turno-chip{border-radius:var(--r-sm);padding:4px 7px;font-size:11px;font-weight:600;display:flex;align-items:center;gap:4px;line-height:1.3;cursor:pointer;transition:.1s}
+.turno-chip:hover{filter:brightness(1.15)}
+.chip-sched{background:var(--blue-l);color:var(--blue);border:1px solid rgba(59,130,246,.25)}
+.chip-h24{background:var(--green-l);color:var(--green);border:1px solid rgba(16,185,129,.25)}
+.chip-guasto{background:var(--red-l);color:var(--red);border:1px solid rgba(239,68,68,.25)}
+.chip-sospeso{background:var(--amber-l);color:var(--amber);border:1px solid rgba(245,158,11,.25)}
+.chip-no-pub{opacity:.5}
+.chip-pub-dot{width:5px;height:5px;border-radius:50%;background:currentColor;flex-shrink:0}
+.cell-add{color:var(--txt3);font-size:18px;line-height:1;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);opacity:0;transition:.15s}
+.grid-cell:hover .cell-add{opacity:.5}
+.grid-cell:hover .cell-add:hover{opacity:1;color:var(--blue)}
+
+/* SELEZIONE MULTI-ZONA */
+.zona-check{position:absolute;top:4px;left:4px;width:14px;height:14px;accent-color:var(--blue);cursor:pointer;display:none}
+.multi-mode .zona-check{display:block}
+.multi-mode .grid-zona-label{padding-left:28px;position:relative}
+.zona-cb{position:absolute;left:8px;top:50%;transform:translateY(-50%);width:15px;height:15px;accent-color:var(--blue);cursor:pointer}
+
+/* ROUTINE BADGE */
+.routine-badge{display:inline-flex;align-items:center;gap:4px;background:var(--purple-l);color:var(--purple);border-radius:20px;font-size:10px;font-weight:700;padding:2px 7px;margin-top:2px}
+
+/* STATS BAR */
+.stats-bar{display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.stat-chip{background:var(--surf2);border:1px solid var(--bord);border-radius:var(--r);padding:8px 14px;display:flex;align-items:center;gap:8px;font-size:13px}
+.stat-chip .val{font-weight:700;font-size:15px}
+.stat-chip.blue .val{color:var(--blue)}
+.stat-chip.green .val{color:var(--green)}
+.stat-chip.amber .val{color:var(--amber)}
+.stat-chip.red .val{color:var(--red)}
+
+/* MODAL */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:.2s}
+.overlay.open{opacity:1;pointer-events:all}
+.modal{background:var(--surf);border:1px solid var(--bord);border-radius:var(--r-lg);width:100%;max-width:520px;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow);transform:translateY(10px);transition:.2s}
+.overlay.open .modal{transform:translateY(0)}
+.modal-lg{max-width:720px}
+.modal-head{padding:18px 20px 14px;border-bottom:1px solid var(--bord);display:flex;align-items:center;justify-content:space-between}
+.modal-head h3{font-size:15px;font-weight:700;color:#fff}
+.modal-close{background:none;border:none;color:var(--txt3);cursor:pointer;font-size:20px;padding:2px 6px;border-radius:4px;transition:.15s;line-height:1}
+.modal-close:hover{background:var(--surf3);color:var(--txt)}
+.modal-body{padding:20px}
+.modal-footer{padding:14px 20px;border-top:1px solid var(--bord);display:flex;gap:8px;justify-content:flex-end}
+
+/* FORM */
+.field{margin-bottom:14px}
+.field label{display:block;font-size:12px;font-weight:600;color:var(--txt2);margin-bottom:5px}
+.field input,.field select,.field textarea{width:100%;background:var(--surf2);border:1px solid var(--bord);border-radius:var(--r-sm);padding:8px 10px;color:var(--txt);font-size:13px;font-family:inherit;outline:none;transition:.15s}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--blue)}
+.field textarea{resize:vertical;min-height:70px}
+.field select option{background:var(--surf2)}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.field-row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-top:1px solid var(--bord);margin-top:4px}
+.toggle-row label{font-size:13px;font-weight:600;color:var(--txt)}
+.toggle-row small{display:block;font-size:11px;color:var(--txt2);font-weight:400}
+input[type=checkbox]{width:16px;height:16px;accent-color:var(--blue);cursor:pointer}
+.tipo-tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+.tipo-tab{flex:1;min-width:80px;padding:8px 6px;border-radius:var(--r-sm);border:1px solid var(--bord);background:var(--surf2);color:var(--txt2);font-size:12px;font-weight:600;cursor:pointer;text-align:center;transition:.15s;font-family:inherit}
+.tipo-tab:hover{border-color:var(--bord2);color:var(--txt)}
+.tipo-tab.active-sched{background:var(--blue-l);border-color:rgba(59,130,246,.4);color:var(--blue)}
+.tipo-tab.active-h24{background:var(--green-l);border-color:rgba(16,185,129,.4);color:var(--green)}
+.tipo-tab.active-guasto{background:var(--red-l);border-color:rgba(239,68,68,.4);color:var(--red)}
+.tipo-tab.active-sospeso{background:var(--amber-l);border-color:rgba(245,158,11,.4);color:var(--amber)}
+
+/* MULTI ASSIGN */
+.zone-multi-list{max-height:280px;overflow-y:auto;border:1px solid var(--bord);border-radius:var(--r-sm)}
+.zone-multi-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid var(--bord);transition:.1s;cursor:pointer}
+.zone-multi-item:last-child{border-bottom:none}
+.zone-multi-item:hover{background:var(--surf3)}
+.zone-multi-item.checked{background:var(--blue-l)}
+.zone-multi-item input[type=checkbox]{flex-shrink:0}
+.zone-multi-info .zmi-nome{font-size:12px;font-weight:700;color:var(--txt)}
+.zone-multi-info .zmi-serb{font-size:11px;color:var(--txt2)}
+
+/* SETTIMANE PRECEDENTI */
+.prev-week-list{display:flex;flex-direction:column;gap:8px;max-height:300px;overflow-y:auto}
+.prev-week-item{background:var(--surf2);border:1px solid var(--bord);border-radius:var(--r);padding:12px 14px;cursor:pointer;transition:.15s;display:flex;align-items:center;justify-content:space-between}
+.prev-week-item:hover{border-color:var(--blue);background:var(--blue-l)}
+.prev-week-item .pw-label{font-size:13px;font-weight:600;color:var(--txt)}
+.prev-week-item .pw-meta{font-size:11px;color:var(--txt2);margin-top:2px}
+.prev-week-item .pw-cnt{background:var(--surf3);border-radius:20px;padding:2px 10px;font-size:12px;font-weight:700;color:var(--txt2)}
+
+/* ROUTINE PANEL */
+.routine-item{background:var(--surf2);border:1px solid var(--bord);border-radius:var(--r);padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.routine-item .ri-info .ri-nome{font-size:13px;font-weight:700;color:var(--txt)}
+.routine-item .ri-info .ri-meta{font-size:11px;color:var(--txt2);margin-top:2px}
+.ri-actions{display:flex;gap:6px}
+.day-pills{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}
+.day-pill{padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;background:var(--surf3);color:var(--txt2)}
+.day-pill.active{background:var(--blue-l);color:var(--blue)}
+
+/* IMPORT EXCEL */
+.drop-zone{border:2px dashed var(--bord2);border-radius:var(--r-lg);padding:40px 20px;text-align:center;cursor:pointer;transition:.2s}
+.drop-zone:hover,.drop-zone.dragover{border-color:var(--blue);background:var(--blue-l)}
+.drop-zone svg{color:var(--txt3);margin-bottom:12px}
+.drop-zone p{color:var(--txt2);font-size:13px}
+.drop-zone strong{color:var(--txt);display:block;font-size:15px;margin-bottom:6px}
+
+/* TOAST */
+#toasts{position:fixed;bottom:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px}
+.toast{background:var(--surf2);border:1px solid var(--bord);border-radius:var(--r);padding:12px 16px;font-size:13px;font-weight:500;color:var(--txt);box-shadow:var(--shadow);display:flex;align-items:center;gap:8px;animation:toastIn .2s ease;max-width:320px}
+.toast.success{border-color:rgba(16,185,129,.4);background:var(--green-l);color:var(--green)}
+.toast.error{border-color:rgba(239,68,68,.4);background:var(--red-l);color:var(--red)}
+.toast.info{border-color:rgba(59,130,246,.4);background:var(--blue-l);color:var(--blue)}
+.toast.warning{border-color:rgba(245,158,11,.4);background:var(--amber-l);color:var(--amber)}
+@keyframes toastIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+
+/* LOADER */
+.spinner{width:18px;height:18px;border:2px solid var(--bord);border-top-color:var(--blue);border-radius:50%;animation:spin .6s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:400;display:none;align-items:center;justify-content:center}
+.loading-overlay.show{display:flex}
+.loading-box{background:var(--surf);border:1px solid var(--bord);border-radius:var(--r-lg);padding:24px 32px;display:flex;align-items:center;gap:14px;font-size:14px;font-weight:600;color:var(--txt)}
+
+/* EMPTY */
+.empty-state{text-align:center;padding:60px 20px;color:var(--txt3)}
+.empty-state svg{margin-bottom:14px;opacity:.4}
+.empty-state p{font-size:14px}
+
+/* RESPONSIVE */
+@media(max-width:900px){.layout{grid-template-columns:1fr}.sidebar{display:none}.grid-row,.grid-row-header{grid-template-columns:160px repeat(7,1fr)}}
 </style>
 </head>
 <body>
-<div id="loader"><div class="spin"></div><span id="lmsg" style="font-size:13px;color:var(--txt2)">Connessione...</span></div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-logo">
+    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+    Turni Acqua — Editor Tecnici
+  </div>
+  <div class="topbar-sep"></div>
+  <div class="topbar-week">
+    <button onclick="shiftWeek(-1)">‹</button>
+    <span id="week-label">—</span>
+    <button onclick="shiftWeek(1)">›</button>
+    <span class="badge-week" id="week-badge">Sett. —</span>
+  </div>
+  <button class="btn btn-ghost btn-sm" onclick="goCurrentWeek()">Oggi</button>
+  <button class="btn btn-amber btn-sm" onclick="openRoutinePanel()">⚡ Routine</button>
+  <button class="btn btn-purple btn-sm" onclick="openImportExcel()">📥 Importa Excel</button>
+  <button class="btn btn-primary btn-sm" onclick="pubAll()">✓ Pubblica tutto</button>
+</div>
+
+<!-- LAYOUT -->
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-section">
+      <input class="sidebar-search" type="text" placeholder="Cerca comune…" id="sidebar-search" oninput="filterComuni()">
+    </div>
+    <div class="sidebar-label">Comuni</div>
+    <div id="comuni-list"></div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="toolbar">
+      <div class="toolbar-title" id="main-title">Seleziona un comune <span>→</span></div>
+      <button class="btn btn-ghost btn-sm" id="btn-multi" onclick="toggleMultiMode()" title="Modalità selezione multipla zone">☐ Seleziona zone</button>
+      <button class="btn btn-ghost btn-sm" id="btn-copy-prev" onclick="openCopyPrev()" title="Copia turni settimana precedente">⎘ Copia settimana prec.</button>
+      <div id="multi-toolbar" style="display:none;gap:8px;display:none">
+        <button class="btn btn-green btn-sm" onclick="bulkAssign()">✦ Assegna a zone selezionate</button>
+        <button class="btn btn-red btn-sm" onclick="bulkClear()">✕ Cancella selezionate</button>
+        <button class="btn btn-ghost btn-sm" onclick="selectAllZone()">Seleziona tutto</button>
+        <button class="btn btn-ghost btn-sm" onclick="clearSelection()">Deseleziona</button>
+      </div>
+    </div>
+
+    <div class="stats-bar" id="stats-bar" style="display:none">
+      <div class="stat-chip blue"><span class="val" id="stat-tot">0</span> turni totali</div>
+      <div class="stat-chip green"><span class="val" id="stat-pub">0</span> pubblicati</div>
+      <div class="stat-chip amber"><span class="val" id="stat-boz">0</span> bozze</div>
+      <div class="stat-chip red"><span class="val" id="stat-gua">0</span> guasti</div>
+    </div>
+
+    <div id="grid-container">
+      <div class="empty-state">
+        <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <p>Seleziona un comune dalla barra laterale</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL TURNO ===== -->
+<div class="overlay" id="ov-turno" onclick="closeIfBg(event,'ov-turno')">
+<div class="modal">
+  <div class="modal-head">
+    <h3 id="mt-title">Turno</h3>
+    <button class="modal-close" onclick="closeOv('ov-turno')">×</button>
+  </div>
+  <div class="modal-body">
+    <div style="margin-bottom:10px;font-size:12px;color:var(--txt2)" id="mt-context"></div>
+    <div class="tipo-tabs">
+      <div class="tipo-tab" id="tab-sched" onclick="setTipo('schedulato')">🕐 Schedulato</div>
+      <div class="tipo-tab" id="tab-h24" onclick="setTipo('H24')">🔵 H24</div>
+      <div class="tipo-tab" id="tab-guasto" onclick="setTipo('guasto')">🔴 Guasto</div>
+      <div class="tipo-tab" id="tab-sospeso" onclick="setTipo('sospeso')">🟡 Sospeso</div>
+    </div>
+    <div class="field-row" id="orario-field">
+      <div class="field">
+        <label>Ora inizio</label>
+        <input type="time" id="mt-ora-ini" value="06:00">
+      </div>
+      <div class="field">
+        <label>Ora fine</label>
+        <input type="time" id="mt-ora-fin" value="12:00">
+      </div>
+    </div>
+    <div class="field">
+      <label>Note (opzionale)</label>
+      <textarea id="mt-note" placeholder="Es: riduzione pressione, lavori in corso…"></textarea>
+    </div>
+    <div class="toggle-row">
+      <div>
+        <label>Pubblica subito</label>
+        <small>Visibile nella vista pubblica</small>
+      </div>
+      <input type="checkbox" id="mt-pub" checked>
+    </div>
+    <div class="toggle-row" id="rt-save-row" style="display:none">
+      <div>
+        <label>💾 Salva come routine</label>
+        <small>Ripeti automaticamente ogni settimana</small>
+      </div>
+      <input type="checkbox" id="mt-save-routine">
+    </div>
+    <div class="field" id="rt-name-field" style="display:none;margin-top:8px">
+      <label>Nome routine</label>
+      <input type="text" id="mt-routine-name" placeholder="Es: Lunedì mattina Agrigento centro">
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-ghost" onclick="closeOv('ov-turno')">Annulla</button>
+    <button class="btn btn-red btn-sm" id="mt-del-btn" onclick="deleteTurno()" style="display:none">Elimina</button>
+    <button class="btn btn-primary" onclick="saveTurno()" id="mt-save-btn">Salva</button>
+  </div>
+</div>
+</div>
+
+<!-- ===== MODAL BULK ASSIGN ===== -->
+<div class="overlay" id="ov-bulk" onclick="closeIfBg(event,'ov-bulk')">
+<div class="modal">
+  <div class="modal-head">
+    <h3>Assegna turno a zone selezionate</h3>
+    <button class="modal-close" onclick="closeOv('ov-bulk')">×</button>
+  </div>
+  <div class="modal-body">
+    <div id="bulk-zone-summary" style="margin-bottom:12px;font-size:13px;color:var(--txt2)"></div>
+    <div class="field-row">
+      <div class="field">
+        <label>Data inizio</label>
+        <input type="date" id="bk-date-ini">
+      </div>
+      <div class="field">
+        <label>Data fine (opz.)</label>
+        <input type="date" id="bk-date-fin">
+      </div>
+    </div>
+    <div class="field">
+      <label>Giorni della settimana</label>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px" id="bk-days">
+        <label style="display:flex;align-items:center;gap:4px;font-size:12px;font-weight:600;cursor:pointer"><input type="checkbox" value="1"> Lun</label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:12px;font-weight:600;cursor:pointer"><input type="checkbox" value="2"> Mar</label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:12px;font-weight:600;cursor:pointer"><input type="checkbox" value="3"> Mer</label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:12px;font-weight:600;cursor:pointer"><input type="checkbox" value="4"> Gio</label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:12px;font-weight:600;cursor:pointer"><input type="checkbox" value="5"> Ven</label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:12px;font-weight:600;cursor:pointer"><input type="checkbox" value="6"> Sab</label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:12px;font-weight:600;cursor:pointer"><input type="checkbox" value="0"> Dom</label>
+      </div>
+    </div>
+    <div class="tipo-tabs">
+      <div class="tipo-tab" id="btab-sched" onclick="setBTipo('schedulato')">🕐 Schedulato</div>
+      <div class="tipo-tab" id="btab-h24" onclick="setBTipo('H24')">🔵 H24</div>
+      <div class="tipo-tab" id="btab-guasto" onclick="setBTipo('guasto')">🔴 Guasto</div>
+      <div class="tipo-tab" id="btab-sospeso" onclick="setBTipo('sospeso')">🟡 Sospeso</div>
+    </div>
+    <div class="field-row" id="bk-orario-field">
+      <div class="field">
+        <label>Ora inizio</label>
+        <input type="time" id="bk-ora-ini" value="06:00">
+      </div>
+      <div class="field">
+        <label>Ora fine</label>
+        <input type="time" id="bk-ora-fin" value="12:00">
+      </div>
+    </div>
+    <div class="field">
+      <label>Note (opzionale)</label>
+      <input type="text" id="bk-note" placeholder="Es: distribuzione ridotta">
+    </div>
+    <div class="toggle-row">
+      <div><label>Pubblica subito</label></div>
+      <input type="checkbox" id="bk-pub" checked>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-ghost" onclick="closeOv('ov-bulk')">Annulla</button>
+    <button class="btn btn-primary" onclick="saveBulk()" id="bk-save-btn">Salva turni</button>
+  </div>
+</div>
+</div>
+
+<!-- ===== MODAL COPIA SETTIMANA PRECEDENTE ===== -->
+<div class="overlay" id="ov-copy" onclick="closeIfBg(event,'ov-copy')">
+<div class="modal modal-lg">
+  <div class="modal-head">
+    <h3>⎘ Copia settimana precedente</h3>
+    <button class="modal-close" onclick="closeOv('ov-copy')">×</button>
+  </div>
+  <div class="modal-body">
+    <div class="alert alert-info" style="margin-bottom:14px">
+      ℹ️ I turni verranno copiati nella settimana attualmente visualizzata. Puoi modificarli dopo.
+    </div>
+    <div class="field">
+      <label>Settimana da copiare</label>
+      <div class="prev-week-list" id="prev-weeks-list"></div>
+    </div>
+    <div class="field">
+      <label>Offset giorni (es. +7 = stessa settimana anno prossimo)</label>
+      <input type="number" id="cp-offset" value="7" min="1" max="365">
+    </div>
+    <div class="toggle-row">
+      <div><label>Sovrascrivi turni esistenti nella settimana destinazione</label></div>
+      <input type="checkbox" id="cp-overwrite">
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-ghost" onclick="closeOv('ov-copy')">Annulla</button>
+    <button class="btn btn-primary" onclick="doCopy()" id="cp-btn">Copia turni</button>
+  </div>
+</div>
+</div>
+
+<!-- ===== MODAL ROUTINE ===== -->
+<div class="overlay" id="ov-routine" onclick="closeIfBg(event,'ov-routine')">
+<div class="modal modal-lg">
+  <div class="modal-head">
+    <h3>⚡ Gestione Routine</h3>
+    <button class="modal-close" onclick="closeOv('ov-routine')">×</button>
+  </div>
+  <div class="modal-body">
+    <div style="margin-bottom:14px;display:flex;justify-content:space-between;align-items:center">
+      <span style="color:var(--txt2);font-size:13px">Le routine vengono applicate automaticamente ogni settimana</span>
+      <button class="btn btn-primary btn-sm" onclick="applyAllRoutine()">▶ Applica tutte ora</button>
+    </div>
+    <div id="routine-list" style="display:flex;flex-direction:column;gap:8px"></div>
+    <div id="routine-empty" class="empty-state" style="padding:30px 0">
+      <p>Nessuna routine salvata. Crea un turno e spunta "Salva come routine".</p>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ===== MODAL IMPORT EXCEL ===== -->
+<div class="overlay" id="ov-excel" onclick="closeIfBg(event,'ov-excel')">
+<div class="modal modal-lg">
+  <div class="modal-head">
+    <h3>📥 Importa da Excel</h3>
+    <button class="modal-close" onclick="closeOv('ov-excel')">×</button>
+  </div>
+  <div class="modal-body">
+    <div class="drop-zone" id="drop-zone" onclick="document.getElementById('excel-file').click()" ondragover="dragOver(event)" ondrop="dropFile(event)" ondragleave="dragLeave(event)">
+      <svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      <strong>Trascina il file Excel qui</strong>
+      <p>oppure clicca per selezionare — .xlsx, .xls, .csv</p>
+    </div>
+    <input type="file" id="excel-file" accept=".xlsx,.xls,.csv" style="display:none" onchange="loadExcel(event)">
+    <div id="excel-preview" style="margin-top:14px;display:none">
+      <div style="font-size:13px;font-weight:700;color:var(--txt);margin-bottom:8px">Anteprima dati importati:</div>
+      <div style="overflow-x:auto;max-height:250px;border:1px solid var(--bord);border-radius:var(--r-sm)">
+        <table id="excel-table" style="width:100%;border-collapse:collapse;font-size:12px"></table>
+      </div>
+      <div style="margin-top:10px;display:flex;align-items:center;gap:10px">
+        <span id="excel-match-info" style="font-size:12px;color:var(--txt2)"></span>
+        <button class="btn btn-primary btn-sm" onclick="confirmImport()" id="imp-btn">Importa turni</button>
+      </div>
+    </div>
+    <div style="margin-top:16px;background:var(--surf2);border-radius:var(--r);padding:12px 14px;font-size:12px;color:var(--txt2)">
+      <strong style="color:var(--txt);display:block;margin-bottom:6px">Formato Excel atteso:</strong>
+      Le colonne devono contenere: <code style="background:var(--surf3);padding:1px 5px;border-radius:3px">codice_zona</code> · 
+      <code style="background:var(--surf3);padding:1px 5px;border-radius:3px">data</code> (gg/mm/aaaa) · 
+      <code style="background:var(--surf3);padding:1px 5px;border-radius:3px">ora_inizio</code> · 
+      <code style="background:var(--surf3);padding:1px 5px;border-radius:3px">ora_fine</code> · 
+      <code style="background:var(--surf3);padding:1px 5px;border-radius:3px">tipo</code> (schedulato/H24/guasto/sospeso) · 
+      <code style="background:var(--surf3);padding:1px 5px;border-radius:3px">note</code>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- LOADER -->
+<div class="loading-overlay" id="loading-overlay">
+  <div class="loading-box">
+    <div class="spinner"></div>
+    <span id="loading-msg">Caricamento…</span>
+  </div>
+</div>
 <div id="toasts"></div>
 
-<!-- LOGIN -->
-<div id="login-wrap">
-  <div class="lbox">
-    <div class="ico">💧</div>
-    <h1>IVR Turni Acqua</h1>
-    <p>Pannello amministratore</p>
-    <div class="lerr" id="lerr"></div>
-    <div class="field"><label>Email</label><input type="email" id="l-em" placeholder="admin@example.com" autocomplete="email"></div>
-    <div class="field"><label>Password</label><input type="password" id="l-pw" placeholder="••••••••" autocomplete="current-password"></div>
-    <button class="btn bp blg" style="width:100%;margin-top:6px" onclick="doLogin()" id="lbtn">Accedi</button>
-    <div style="text-align:center;margin-top:12px">
-      <button class="btn" style="border:none;color:var(--txt3);font-size:13px" onclick="goPub()">← Vista pubblica</button>
-    </div>
-  </div>
-</div>
-
-<!-- APP -->
-<div id="app">
-  <nav>
-    <div class="nbrand">💧 Turni Acqua</div>
-    <div class="ntabs">
-      <button class="ntab active" data-v="pub" onclick="sv('pub')">🌐 Vista Pubblica</button>
-      <button class="ntab adm" data-v="dash" onclick="sv('dash')">📊 Dashboard</button>
-      <button class="ntab adm" data-v="turni" onclick="sv('turni')">📅 Turni</button>
-      <button class="ntab adm" data-v="zone" onclick="sv('zone')">📍 Zone</button>
-      <button class="ntab adm" data-v="cs" onclick="sv('cs')">🏘 Comuni</button>
-    </div>
-    <div class="nright">
-      <span class="nuser" id="nuser"></span>
-      <button class="nbtn" id="blog" style="display:none" onclick="doLogout()">Esci</button>
-      <button class="nbtn" id="blin" onclick="showLogin()">🔐 Admin</button>
-    </div>
-  </nav>
-
-  <!-- PUBBLICA -->
-  <div id="view-pub" class="view active">
-    <div class="phero">
-      <h1>💧 Turni Idrici</h1>
-      <p>Consulta orari di erogazione nella tua zona</p>
-      <div class="pmeta">📅 <span id="pdate"></span></div>
-    </div>
-    <div class="psbar">
-      <input type="text" class="psearch" id="pq" placeholder="🔍 Cerca comune, zona, via..." oninput="renderPub()">
-      <select class="psearch" style="flex:0 0 auto;min-width:160px" id="pcf" onchange="renderPub()"><option value="">Tutti i comuni</option></select>
-      <div class="tgrp">
-        <button class="tbtn active" id="tbo" onclick="setPM('oggi')">Oggi</button>
-        <button class="tbtn" id="tbw" onclick="setPM('week')">Settimana</button>
-      </div>
-    </div>
-    <div id="pbody"></div>
-  </div>
-
-  <!-- DASHBOARD -->
-  <div id="view-dash" class="view">
-    <div class="ph"><div><h2>Dashboard</h2><p>Panoramica operativa</p></div>
-      <button class="btn bp" onclick="sv('turni');openTM()">+ Nuovo turno</button>
-    </div>
-    <div class="stats" id="dstats"></div>
-    <div class="card"><div class="ch"><h3>Riepilogo per comune — oggi</h3></div>
-      <div class="tw"><table><thead><tr>
-        <th>Comune</th><th>Zone</th><th>Turni</th><th>H24</th><th>Manutenzioni</th><th>Rinviati</th><th>Bozze</th><th></th>
-      </tr></thead><tbody id="dtbl"></tbody></table></div>
-    </div>
-  </div>
-
-  <!-- TURNI -->
-  <div id="view-turni" class="view">
-    <div class="ph">
-      <div><h2>Gestione Turni</h2><p>Inserisci, modifica e pubblica</p></div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn bg" onclick="pubAll()">✅ Pubblica tutto</button>
-        <button class="btn bp" onclick="openTM()">+ Nuovo turno</button>
-      </div>
-    </div>
-    <div class="fbar">
-      <div class="fg"><label>Comune</label><select id="efc" onchange="efls();renderTT()"><option value="">Tutti</option></select></div>
-      <div class="fg"><label>Serbatoio</label><select id="efs" onchange="renderTT()"><option value="">Tutti</option></select></div>
-      <div class="fg"><label>Da</label><input type="date" id="efd1" onchange="renderTT()"></div>
-      <div class="fg"><label>A</label><input type="date" id="efd2" onchange="renderTT()"></div>
-      <div class="fg"><label>Tipo</label><select id="eft" onchange="renderTT()">
-        <option value="">Tutti</option>
-        <option value="schedulato">Schedulato</option>
-        <option value="H24">H24</option>
-        <option value="manutenzione">Manutenzione</option>
-        <option value="guasto">Guasto</option>
-        <option value="rinviato">Rinviato</option>
-        <option value="n/a">N/A</option>
-      </select></div>
-      <div class="fg"><label>Stato</label><select id="efp" onchange="renderTT()">
-        <option value="">Tutti</option><option value="1">Pubblicato</option><option value="0">Bozza</option>
-      </select></div>
-      <button class="btn bsm" onclick="clrF()">Reset</button>
-    </div>
-    <div class="card"><div class="ch"><h3>Turni</h3><span id="tcnt" style="font-size:12px;color:var(--txt3)"></span></div>
-      <div class="tw"><table>
-        <thead><tr><th>Codice</th><th>Comune</th><th>Serbatoio</th><th>Zona</th><th>Data</th><th>Orario</th><th>Tipo</th><th>Pub.</th><th style="width:120px"></th></tr></thead>
-        <tbody id="ttbl"></tbody>
-      </table></div>
-    </div>
-  </div>
-
-  <!-- ZONE -->
-  <div id="view-zone" class="view">
-    <div class="ph">
-      <div><h2>Zone</h2><p>Gestisci le zone idriche</p></div>
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <div class="fg" style="flex-direction:row;align-items:center;gap:6px">
-          <label style="white-space:nowrap;font-size:11px;font-weight:700;color:var(--txt3);text-transform:uppercase">Comune</label>
-          <select id="zfc" onchange="renderZ()" style="width:auto"><option value="">Tutti</option></select>
-        </div>
-        <button class="btn bp" onclick="openZM()">+ Nuova zona</button>
-      </div>
-    </div>
-    <div class="card"><div class="tw"><table>
-      <thead><tr><th>Codice</th><th>Comune</th><th>Serbatoio</th><th>Zona</th><th>Strade</th><th>Freq.</th><th style="width:100px"></th></tr></thead>
-      <tbody id="ztbl"></tbody>
-    </table></div></div>
-  </div>
-
-  <!-- COMUNI/SERBATOI -->
-  <div id="view-cs" class="view">
-    <div class="ph"><div><h2>Comuni &amp; Serbatoi</h2><p>Struttura geografica</p></div>
-      <div style="display:flex;gap:8px">
-        <button class="btn" onclick="openSM()">+ Serbatoio</button>
-        <button class="btn bp" onclick="openCM()">+ Comune</button>
-      </div>
-    </div>
-    <div id="cstree"></div>
-  </div>
-</div>
-
-<!-- MODALE TURNO -->
-<div class="mo" id="mo-t">
-<div class="modal wide">
-  <div class="mh"><h2 id="mtt">Nuovo Turno</h2><button class="mcl" onclick="cm('mo-t')">×</button></div>
-  <div class="fr2">
-    <div class="field"><label>Comune *</label><select id="mtc" onchange="mtls()"><option value="">Seleziona...</option></select></div>
-    <div class="field"><label>Serbatoio *</label><select id="mts" onchange="mtlz()"><option value="">Seleziona...</option></select></div>
-  </div>
-  <div class="fr2">
-    <div class="field"><label>Zona *</label><select id="mtz"><option value="">Seleziona...</option></select></div>
-    <div class="field"><label>Data *</label><input type="date" id="mtd"></div>
-  </div>
-  <div class="fr2">
-    <div class="field"><label>Tipo erogazione *</label>
-      <select id="mtipo" onchange="mttog()">
-        <option value="schedulato">Orario schedulato</option>
-        <option value="H24">H24 — continua</option>
-        <option value="manutenzione">Manutenzione programmata</option>
-        <option value="guasto">Guasto / Interruzione</option>
-        <option value="rinviato">Rinviato</option>
-        <option value="n/a">Non disponibile (N/A)</option>
-        <option value="aperto">Aperto da ieri</option>
-      </select>
-    </div>
-    <div class="field" id="morf"><label>Orario inizio</label><input type="time" id="mora" value="08:00"></div>
-  </div>
-  <div class="fr2" id="mdurf">
-    <div class="field"><label>Durata prevista (ore)</label><input type="number" id="mdur" placeholder="es. 6" min="1" max="24" step="0.5"></div>
-    <div class="field"><label>Orario fine</label><input type="time" id="mfine"></div>
-  </div>
-  <div id="mextra" style="display:none">
-    <div style="height:1px;background:var(--bord);margin:4px 0 14px"></div>
-    <div class="field"><label>Motivo interruzione / lavori</label>
-      <select id="mmotivo">
-        <option value="">Seleziona...</option>
-        <option value="Lavori programmati sulla rete">Lavori programmati sulla rete</option>
-        <option value="Sostituzione tubazione">Sostituzione tubazione</option>
-        <option value="Riparazione perdita">Riparazione perdita</option>
-        <option value="Guasto pompa">Guasto pompa</option>
-        <option value="Guasto elettrico">Guasto elettrico</option>
-        <option value="Rottura condotta principale">Rottura condotta principale</option>
-        <option value="Intervento serbatoio">Intervento serbatoio</option>
-        <option value="Siccità / riduzione disponibilità idrica">Siccità / riduzione disponibilità idrica</option>
-        <option value="Altro">Altro</option>
-      </select>
-    </div>
-    <div class="field"><label>Descrizione dettagliata</label>
-      <textarea id="mdesc" placeholder="Descrivi il problema o i lavori in corso..."></textarea></div>
-    <div class="fr2">
-      <div class="field"><label>Prossima erogazione — data</label><input type="date" id="mpd"></div>
-      <div class="field"><label>Prossima erogazione — orario</label><input type="time" id="mpo"></div>
-    </div>
-    <div class="field"><label>Ditta / squadra intervenuta</label><input type="text" id="mdit" placeholder="es. Impresa Rossi srl"></div>
-  </div>
-  <div style="height:1px;background:var(--bord);margin:4px 0 14px"></div>
-  <div class="field"><label>Note pubbliche (visibili ai cittadini)</label>
-    <textarea id="mnote" placeholder="Messaggi di servizio, avvisi, raccomandazioni..."></textarea></div>
-  <div class="fr2">
-    <div class="field"><label>Pressione stimata (bar)</label><input type="number" id="mpres" placeholder="es. 3.5" step="0.1" min="0" max="10"></div>
-    <div class="field"><label>Portata stimata (l/s)</label><input type="number" id="mport" placeholder="es. 15" step="0.5" min="0"></div>
-  </div>
-  <label class="chk" style="margin-bottom:14px"><input type="checkbox" id="mpub"> Pubblica subito (visibile ai cittadini)</label>
-  <div class="mftr">
-    <button class="btn" onclick="cm('mo-t')">Annulla</button>
-    <button class="btn bp" onclick="saveTurno()" id="mtsave">💾 Salva turno</button>
-  </div>
-</div>
-</div>
-
-<!-- MODALE ZONA -->
-<div class="mo" id="mo-z">
-<div class="modal">
-  <div class="mh"><h2 id="mzt">Nuova Zona</h2><button class="mcl" onclick="cm('mo-z')">×</button></div>
-  <div class="fr2">
-    <div class="field"><label>Comune *</label><select id="mzc" onchange="mzls()"><option value="">Seleziona...</option></select></div>
-    <div class="field"><label>Serbatoio *</label><select id="mzs"><option value="">Seleziona...</option></select></div>
-  </div>
-  <div class="fr2">
-    <div class="field"><label>Codice</label><input type="text" id="mzcod" placeholder="es. A089011001"></div>
-    <div class="field"><label>Nome zona *</label><input type="text" id="mznome" placeholder="es. ZONA 1"></div>
-  </div>
-  <div class="field"><label>Strade / descrizione</label>
-    <textarea id="mzdesc" placeholder="Via Roma, Via Garibaldi, Piazza Municipio..."></textarea></div>
-  <div class="fr2">
-    <div class="field"><label>Frequenza erogazione</label>
-      <select id="mzfreq">
-        <option value="">Non specificata</option>
-        <option value="Giornaliera">Giornaliera</option>
-        <option value="A giorni alterni">A giorni alterni</option>
-        <option value="Ogni 3 giorni">Ogni 3 giorni</option>
-        <option value="Settimanale">Settimanale</option>
-        <option value="H24">H24</option>
-      </select>
-    </div>
-    <div class="field"><label>Pressione tipica (bar)</label><input type="number" id="mzpres" placeholder="es. 3" step="0.5" min="0" max="10"></div>
-  </div>
-  <div class="field"><label>Note interne (solo admin)</label><textarea id="mznote" placeholder="Note operative..."></textarea></div>
-  <div class="mftr">
-    <button class="btn" onclick="cm('mo-z')">Annulla</button>
-    <button class="btn bp" onclick="saveZona()">💾 Salva zona</button>
-  </div>
-</div>
-</div>
-
-<!-- MODALE COMUNE -->
-<div class="mo" id="mo-c">
-<div class="modal" style="max-width:420px">
-  <div class="mh"><h2 id="mct">Nuovo Comune</h2><button class="mcl" onclick="cm('mo-c')">×</button></div>
-  <div class="field"><label>Nome comune *</label><input type="text" id="mcnome" placeholder="es. Agrigento"></div>
-  <div class="fr2">
-    <div class="field"><label>Provincia</label><input type="text" id="mcprov" placeholder="AG" maxlength="2" style="text-transform:uppercase"></div>
-    <div class="field"><label>Codice ISTAT</label><input type="text" id="mcistat" placeholder="es. A089"></div>
-  </div>
-  <div class="field"><label>Note operative</label><textarea id="mcnote" placeholder="Contatti, riferimenti..."></textarea></div>
-  <div class="mftr">
-    <button class="btn" onclick="cm('mo-c')">Annulla</button>
-    <button class="btn bp" onclick="saveComune()">💾 Salva</button>
-  </div>
-</div>
-</div>
-
-<!-- MODALE SERBATOIO -->
-<div class="mo" id="mo-s">
-<div class="modal" style="max-width:460px">
-  <div class="mh"><h2 id="mst">Nuovo Serbatoio</h2><button class="mcl" onclick="cm('mo-s')">×</button></div>
-  <div class="field"><label>Comune *</label><select id="mscc"><option value="">Seleziona...</option></select></div>
-  <div class="field"><label>Nome serbatoio *</label><input type="text" id="msnome" placeholder="es. Serbatoio Madonna della Rocca"></div>
-  <div class="fr2">
-    <div class="field"><label>Capacità (m³)</label><input type="number" id="mscap" placeholder="es. 5000" min="0"></div>
-    <div class="field"><label>Quota (m s.l.m.)</label><input type="number" id="msquota" placeholder="es. 320" min="0"></div>
-  </div>
-  <div class="field"><label>Note</label><textarea id="msnote" placeholder="Stato, caratteristiche..."></textarea></div>
-  <div class="mftr">
-    <button class="btn" onclick="cm('mo-s')">Annulla</button>
-    <button class="btn bp" onclick="saveSerb()">💾 Salva</button>
-  </div>
-</div>
-</div>
-
-<!-- MODALE DETTAGLIO PUBBLICO -->
-<div class="mo" id="mo-det">
-<div class="modal">
-  <div class="mh"><h2>Dettaglio zona</h2><button class="mcl" onclick="cm('mo-det')">×</button></div>
-  <div id="detbody"></div>
-</div>
-</div>
-
-<!-- CONFIRM -->
-<div class="cw" id="cw">
-  <div class="cbox">
-    <h3 id="ctit">Conferma</h3><p id="cmsg">Sei sicuro?</p>
-    <div class="cacts">
-      <button class="btn" onclick="ccf(false)">Annulla</button>
-      <button class="btn br" onclick="ccf(true)">Conferma</button>
-    </div>
-  </div>
-</div>
-
 <script>
-const DB=window.supabase.createClient(
-  'https://myvebxjsmlomroczjbgg.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im15dmVieGpzbWxvbXJvY3pqYmdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2NTYwODEsImV4cCI6MjA5NDIzMjA4MX0.DB6Ce9zBZA6PceBzG67N3QxnRXNuCf_Fqu01QQCs7RY'
-);
-let comuni=[],serbatoi=[],zone=[],turni=[];
-let isAdm=false,curUser=null,pm='oggi',cfr=null;
-let eTid=null,eZid=null,eCid=null,eSid=null;
-const DAYS=['domenica','lunedì','martedì','mercoledì','giovedì','venerdì','sabato'];
-const MON=['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'];
-const td=()=>new Date().toISOString().slice(0,10);
-const pD=(n)=>{const d=new Date();d.setDate(d.getDate()+n);return d.toISOString().slice(0,10);}
-const fD=(iso)=>{const d=new Date(iso+'T00:00:00');return DAYS[d.getDay()]+' '+d.getDate()+' '+MON[d.getMonth()]+' '+d.getFullYear();}
-const sh=(id,fl=false)=>{const e=document.getElementById(id);if(!e)return;e.classList.remove('h');if(fl)e.classList.add('show');}
-const hi=(id)=>{const e=document.getElementById(id);if(!e)return;e.classList.add('h');e.classList.remove('show');}
-const sl=(m='')=>{document.getElementById('lmsg').textContent=m;sh('loader');}
-const hl=()=>hi('loader');
-const cm=(id)=>document.getElementById(id).classList.remove('open');
-const om=(id)=>document.getElementById(id).classList.add('open');
-const sv2=(id,v)=>{const e=document.getElementById(id);if(e)e.value=v||'';}
-const so=(id,h)=>{const e=document.getElementById(id);if(e)e.innerHTML=h;}
+// ============================================================
+// CONFIG — aggiorna con i tuoi dati Supabase
+// ============================================================
+const SUPABASE_URL = 'https://myvebxjsmlomroczjbgg.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im15dmVieGpzbWxvbXJvY3pqYmdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2NTYwODEsImV4cCI6MjA5NDIzMjA4MX0.DB6Ce9zBZA6PceBzG67N3QxnRXNuCf_Fqu01QQCs7RY';
+// ============================================================
 
-function toast(m,t='i'){const c=document.getElementById('toasts'),el=document.createElement('div');el.className='toast '+t;el.textContent=m;c.appendChild(el);setTimeout(()=>el.remove(),3500);}
-function conf2(ti,ms){return new Promise(r=>{document.getElementById('ctit').textContent=ti;document.getElementById('cmsg').textContent=ms;document.getElementById('cw').classList.add('open');cfr=r;});}
-function ccf(v){document.getElementById('cw').classList.remove('open');if(cfr){cfr(v);cfr=null;}}
-document.addEventListener('keydown',e=>{
-  if(e.key==='Escape')document.querySelectorAll('.mo.open').forEach(m=>m.classList.remove('open'));
-  if(e.key==='Enter'&&!document.getElementById('login-wrap').classList.contains('h'))doLogin();
-});
+const { createClient } = supabase;
+const DB = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-async function boot(){
-  sl('Connessione...');
-  try{
-    const{data:{session}}=await DB.auth.getSession();
-    if(session){curUser=session.user;isAdm=true;}
-    await loadAll();
-    hi('login-wrap');sh('app',true);sv_('pub');
-    if(isAdm)admUI(true);
-  }catch(e){toast('Errore: '+e.message,'e');}
-  finally{hl();}
-}
-function admUI(on){
-  document.querySelectorAll('.ntab.adm').forEach(t=>on?t.classList.remove('adm'):t.classList.add('adm'));
-  // re-add adm class to hide when off
-  if(!on)document.querySelectorAll('.ntab:not([data-v="pub"])').forEach(t=>t.classList.add('adm'));
-  document.getElementById('nuser').textContent=curUser?.email||'';
-  document.getElementById('nuser').classList.toggle('show',on);
-  document.getElementById('blog').style.display=on?'block':'none';
-  document.getElementById('blin').style.display=on?'none':'block';
-}
-function showLogin(){hi('app');sh('login-wrap');document.getElementById('l-em').focus();}
-function goPub(){hi('login-wrap');sh('app',true);sv_('pub');}
-async function doLogin(){
-  const em=document.getElementById('l-em').value.trim(),pw=document.getElementById('l-pw').value;
-  const er=document.getElementById('lerr'),bt=document.getElementById('lbtn');
-  if(!em||!pw){er.textContent='Inserisci email e password.';er.classList.add('show');return;}
-  bt.disabled=true;bt.textContent='Accesso...';
-  const{data,error}=await DB.auth.signInWithPassword({email:em,password:pw});
-  bt.disabled=false;bt.textContent='Accedi';
-  if(error){er.textContent=error.message==='Invalid login credentials'?'Credenziali errate.':error.message;er.classList.add('show');return;}
-  er.classList.remove('show');curUser=data.user;isAdm=true;
-  await loadAll();hi('login-wrap');sh('app',true);admUI(true);sv_('dash');toast('Benvenuto!','s');
-}
-async function doLogout(){await DB.auth.signOut();curUser=null;isAdm=false;admUI(false);sv_('pub');toast('Uscita effettuata.','i');}
+// STATE
+let comuni = [], serbatoi = [], zone = [], turni = [];
+let currentComuneId = null;
+let currentWeekStart = getMonday(new Date());
+let multiMode = false;
+let selectedZone = new Set();
+let editingTurnoId = null;
+let editingZonaId = null;
+let editingDate = null;
+let currentTipo = 'schedulato';
+let currentBTipo = 'schedulato';
+let routines = JSON.parse(localStorage.getItem('turni_routines') || '[]');
+let excelData = [];
+let copySourceWeek = null;
 
-async function loadAll(){
-  sl('Caricamento...');
-  try{
-    const[c,s,z,t]=await Promise.all([
+// ============================================================
+// UTILS
+// ============================================================
+function getMonday(d) {
+  const dt = new Date(d);
+  const day = dt.getDay();
+  const diff = (day === 0 ? -6 : 1 - day);
+  dt.setDate(dt.getDate() + diff);
+  dt.setHours(0,0,0,0);
+  return dt;
+}
+function addDays(d, n) {
+  const dt = new Date(d);
+  dt.setDate(dt.getDate() + n);
+  return dt;
+}
+function fmtDate(d) {
+  return d.toISOString().slice(0,10);
+}
+function fmtDateIT(d) {
+  const dt = typeof d === 'string' ? new Date(d + 'T00:00:00') : d;
+  return dt.toLocaleDateString('it-IT', {day:'2-digit',month:'2-digit'});
+}
+function fmtDateLong(d) {
+  return d.toLocaleDateString('it-IT', {day:'numeric',month:'long'});
+}
+function weekLabel(start) {
+  const end = addDays(start, 6);
+  return `${fmtDateLong(start)} — ${fmtDateLong(end)}`;
+}
+function weekNum(d) {
+  const dt = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  dt.setUTCDate(dt.getUTCDate() + 4 - (dt.getUTCDay() || 7));
+  const yearStart = new Date(Date.UTC(dt.getUTCFullYear(),0,1));
+  return Math.ceil((((dt - yearStart) / 86400000) + 1) / 7);
+}
+const DAYS_IT = ['Lun','Mar','Mer','Gio','Ven','Sab','Dom'];
+const DAYS_FULL = ['Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato','Domenica'];
+
+function toast(msg, type='info', dur=3500) {
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = msg;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(() => el.remove(), dur);
+}
+function showLoad(msg='Caricamento…') {
+  document.getElementById('loading-msg').textContent = msg;
+  document.getElementById('loading-overlay').classList.add('show');
+}
+function hideLoad() { document.getElementById('loading-overlay').classList.remove('show'); }
+
+function openOv(id) { document.getElementById(id).classList.add('open'); }
+function closeOv(id) { document.getElementById(id).classList.remove('open'); }
+function closeIfBg(e, id) { if (e.target.id === id) closeOv(id); }
+
+// ============================================================
+// BOOT
+// ============================================================
+async function boot() {
+  showLoad('Caricamento dati…');
+  try {
+    const [rc, rs, rz] = await Promise.all([
       DB.from('comuni').select('*').order('nome'),
       DB.from('serbatoi').select('*').order('nome'),
       DB.from('zone').select('*').order('nome_zona'),
-      isAdm?DB.from('turni').select('*').order('data',{ascending:false})
-           :DB.from('turni').select('*').eq('pubblicato',true).order('data',{ascending:false})
     ]);
-    if(c.error)throw c.error;if(s.error)throw s.error;
-    if(z.error)throw z.error;if(t.error)throw t.error;
-    comuni=c.data||[];serbatoi=s.data||[];zone=z.data||[];turni=t.data||[];
-    fillSel();
-  }catch(e){toast('Errore caricamento: '+e.message,'e');}
-  finally{hl();}
-}
-function fillSel(){
-  const opts=comuni.map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
-  so('pcf','<option value="">Tutti i comuni</option>'+opts);
-  so('efc','<option value="">Tutti</option>'+opts);
-  so('zfc','<option value="">Tutti</option>'+opts);
-  so('mtc','<option value="">Seleziona...</option>'+opts);
-  so('mzc','<option value="">Seleziona...</option>'+opts);
-  so('mscc','<option value="">Seleziona...</option>'+opts);
-}
-const sBC=(cid)=>serbatoi.filter(s=>s.comune_id==cid);
-const zBS=(sid)=>zone.filter(z=>z.serbatoio_id==sid);
-const comZ=(zid)=>{const z=zone.find(z=>z.id==zid);if(!z)return null;const s=serbatoi.find(s=>s.id==z.serbatoio_id);return s?comuni.find(c=>c.id==s.comune_id):null;}
-const serbZ=(zid)=>{const z=zone.find(z=>z.id==zid);return z?serbatoi.find(s=>s.id==z.serbatoio_id):null;}
-
-function sv_(name){
-  if(!isAdm&&['dash','turni','zone','cs'].includes(name)){showLogin();return;}
-  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
-  document.querySelectorAll('.ntab').forEach(t=>t.classList.remove('active'));
-  const ve=document.getElementById('view-'+name);
-  const te=document.querySelector(`.ntab[data-v="${name}"]`);
-  if(ve)ve.classList.add('active');
-  if(te)te.classList.add('active');
-  if(name==='pub')renderPub();
-  if(name==='dash')renderDash();
-  if(name==='turni')renderTT();
-  if(name==='zone')renderZ();
-  if(name==='cs')renderCS();
-}
-// expose sv globally
-function sv(n){sv_(n);}
-
-/* ── PUBLIC ── */
-function setPM(m){pm=m;document.getElementById('tbo').classList.toggle('active',m==='oggi');document.getElementById('tbw').classList.toggle('active',m==='week');renderPub();}
-function tsP(tipo){
-  if(!tipo)return['spn','—'];
-  if(tipo==='H24')return['sph','H24'];
-  if(tipo==='manutenzione'||tipo==='guasto')return['spm',tipo==='guasto'?'Guasto':'Manut.'];
-  if(tipo==='rinviato')return['spr','Rinviato'];
-  if(tipo==='n/a')return['spn','N/A'];
-  if(tipo==='aperto')return['spa','Aperto'];
-  return['sps','—'];
-}
-function getTog(zid){return turni.find(t=>t.zona_id==zid&&t.data===td()&&t.pubblicato)||null;}
-function renderPub(){
-  document.getElementById('pdate').textContent=fD(td());
-  const q=(document.getElementById('pq').value||'').toLowerCase();
-  const cf=document.getElementById('pcf').value;
-  const body=document.getElementById('pbody');
-  const t0=td();
-  const clist=comuni.filter(c=>!cf||String(c.id)===cf);
-  let html='';
-  clist.forEach(com=>{
-    const serbs=sBC(com.id);
-    let shtml='';
-    serbs.forEach(serb=>{
-      const zs=zBS(serb.id).filter(z=>!q||(z.nome_zona+' '+(z.descrizione||'')+' '+com.nome+' '+(z.codice||'')).toLowerCase().includes(q));
-      if(!zs.length)return;
-      if(pm==='oggi'){
-        const cards=zs.map(z=>{
-          const t=getTog(z.id);
-          let cls='spn',lbl='—';
-          if(t){
-            if(t.tipo==='H24'){cls='sph';lbl='H24';}
-            else if(t.tipo==='manutenzione'){cls='spm';lbl='Manut.';}
-            else if(t.tipo==='guasto'){cls='spm';lbl='Guasto';}
-            else if(t.tipo==='rinviato'){cls='spr';lbl='Rinviato';}
-            else if(t.tipo==='n/a'){cls='spn';lbl='N/A';}
-            else if(t.tipo==='aperto'){cls='spa';lbl='Aperto';}
-            else if(t.tipo==='schedulato'){cls='sps';lbl=t.orario?t.orario.substring(0,5):'—';}
-          }
-          const desc=(z.descrizione||'').substring(0,80)+((z.descrizione||'').length>80?'…':'');
-          const nn=t&&t.note?`<div class="zcnote">⚠ ${t.note}</div>`:'';
-          return `<div class="zcard" onclick="showDet(${z.id})">
-            <div class="zctop"><span class="zcname">${z.nome_zona}</span><span class="sp ${cls}">${lbl}</span></div>
-            <div class="zcdesc">${desc||'—'}</div>${nn}
-          </div>`;
-        }).join('');
-        shtml+=`<div class="sttl">🏗 ${serb.nome}</div><div class="zgrid">${cards}</div>`;
-      } else {
-        const days=Array.from({length:7},(_,i)=>pD(i));
-        const hdrs=days.map(d=>{const isT=d===t0,dO=new Date(d+'T00:00:00');return`<th${isT?' class="tht"':''}>${DAYS[dO.getDay()].substring(0,3)}<br>${dO.getDate()}/${dO.getMonth()+1}</th>`;}).join('');
-        const rows=zs.map(z=>{
-          const cells=days.map(d=>{
-            const t=turni.find(t=>t.zona_id==z.id&&t.data===d&&t.pubblicato);
-            let cl='wcn',val='—';
-            if(t){if(t.tipo==='H24'){cl='wch';val='H24';}else if(t.tipo==='manutenzione'||t.tipo==='guasto'){cl='wcm';val=t.tipo==='guasto'?'Guasto':'Manut.';}else if(t.tipo==='rinviato'){cl='wcr';val='Rinv.';}else if(t.tipo==='aperto'){cl='wca';val='Aperto';}else if(t.tipo==='schedulato'){cl='wcs';val=t.orario?t.orario.substring(0,5):'—';}}
-            return`<td${d===t0?' class="tdc"':''}><span class="wc ${cl}">${val}</span></td>`;
-          }).join('');
-          return`<tr><td onclick="showDet(${z.id})" style="cursor:pointer">${z.nome_zona}<br><span style="font-size:10px;color:var(--txt3)">${(z.descrizione||'').substring(0,45)}${(z.descrizione||'').length>45?'…':''}</span></td>${cells}</tr>`;
-        }).join('');
-        shtml+=`<div class="sttl">🏗 ${serb.nome}</div><div class="ww"><table class="wtbl"><thead><tr><th>Zona</th>${hdrs}</tr></thead><tbody>${rows}</tbody></table></div>`;
-      }
-    });
-    if(!shtml)return;
-    html+=`<div class="cblk"><div class="cttl">📍 ${com.nome}${com.provincia?' ('+com.provincia+')':''}</div>${shtml}</div>`;
-  });
-  body.innerHTML=html||'<div style="text-align:center;padding:50px;color:var(--txt3)">Nessun risultato trovato.</div>';
-}
-
-function showDet(zid){
-  const z=zone.find(z=>z.id==zid);if(!z)return;
-  const serb=serbZ(zid),com=comZ(zid);
-  const t0=td();
-  const tList=turni.filter(t=>t.zona_id==zid&&t.pubblicato).sort((a,b)=>a.data.localeCompare(b.data));
-  const tOg=tList.find(t=>t.data===t0);
-  const tNx=tList.find(t=>t.data>t0);
-  function dr(l,v){if(!v&&v!==0)return'';return`<div class="drow"><div class="dlbl">${l}</div><div class="dval">${v}</div></div>`;}
-  let sth='';
-  if(tOg){
-    const[cl,lb]=tsP(tOg.tipo);
-    const ora=tOg.tipo==='schedulato'&&tOg.orario?`<span class="tc">${tOg.orario.substring(0,5)}</span>`:'';
-    const fine=tOg.orario_fine?` → ${tOg.orario_fine.substring(0,5)}`:'';
-    sth=`<div class="drow"><div class="dlbl">Stato oggi</div><div class="dval"><span class="sp ${cl}" style="font-size:13px;padding:5px 12px">${lb}</span> ${ora}${fine?'<span style="color:var(--txt2);font-size:12px;margin-left:4px">'+fine+'</span>':''}</div></div>`;
-    if(tOg.durata_ore)sth+=dr('Durata',tOg.durata_ore+' ore');
-    if(tOg.motivo)sth+=dr('Motivo',tOg.motivo);
-    if(tOg.descrizione)sth+=dr('Dettagli',tOg.descrizione);
-    if(tOg.prossima_data)sth+=dr('Pross. erogazioine',fD(tOg.prossima_data)+(tOg.prossima_ora?' ore '+tOg.prossima_ora.substring(0,5):''));
-    if(tOg.ditta)sth+=dr('Squadra',tOg.ditta);
-    if(tOg.pressione)sth+=dr('Pressione',tOg.pressione+' bar');
-    if(tOg.portata)sth+=dr('Portata',tOg.portata+' l/s');
-    if(tOg.note)sth+=`<div class="alw" style="margin-top:8px">⚠ ${tOg.note}</div>`;
-  } else {
-    sth='<div class="drow"><div class="dlbl">Stato oggi</div><div class="dval"><span class="sp spn">Nessuna informazione</span></div></div>';
+    if (rc.error) throw rc.error;
+    comuni = rc.data; serbatoi = rs.data; zone = rz.data;
+    renderSidebar();
+    updateWeekUI();
+  } catch(e) {
+    toast('Errore connessione Supabase: ' + e.message, 'error', 6000);
+  } finally {
+    hideLoad();
   }
-  let nxh='';
-  if(tNx){const[cl,lb]=tsP(tNx.tipo);nxh=dr('Prossimo turno',`${fD(tNx.data)}${tNx.orario?' ore '+tNx.orario.substring(0,5):''} — <span class="sp ${cl}" style="padding:2px 8px">${lb}</span>`);}
-  document.getElementById('detbody').innerHTML=`
-    <div style="margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--bord)">
-      <div style="font-size:17px;font-weight:800;color:var(--navy)">${z.nome_zona}</div>
-      <div style="font-size:13px;color:var(--txt2);margin-top:3px">${com?.nome||'—'} — ${serb?.nome||'—'}</div>
-    </div>
-    ${dr('Strade',z.descrizione)}${dr('Codice',z.codice?`<span class="tc">${z.codice}</span>`:'')}${dr('Frequenza',z.frequenza_erogazione)}
-    <div style="margin:12px 0;border-top:1px solid var(--bord);padding-top:12px">${sth}${nxh}</div>
-    <div style="font-size:11px;color:var(--txt3);text-align:center;margin-top:10px">Clicca fuori per chiudere</div>
-  `;
-  om('mo-det');
 }
 
-/* ── DASHBOARD ── */
-function renderDash(){
-  const t0=td();
-  document.getElementById('dstats').innerHTML=[
-    {n:comuni.length,l:'Comuni',c:'var(--blue)'},
-    {n:zone.length,l:'Zone totali',c:'var(--purple)'},
-    {n:turni.filter(t=>t.data===t0&&t.pubblicato).length,l:'Turni oggi',c:'var(--green)'},
-    {n:turni.filter(t=>t.data===t0&&(t.tipo==='manutenzione'||t.tipo==='guasto')).length,l:'Manutenzioni',c:'var(--orange)'},
-    {n:turni.filter(t=>!t.pubblicato).length,l:'Bozze',c:'var(--amber)'},
-    {n:turni.filter(t=>t.pubblicato).length,l:'Tot. pubblicati',c:'var(--green)'},
-  ].map(s=>`<div class="stat"><div class="stn" style="color:${s.c}">${s.n}</div><div class="stl">${s.l}</div></div>`).join('');
-  let rows='';
-  comuni.forEach(com=>{
-    const serbs=sBC(com.id),zids=serbs.flatMap(s=>zBS(s.id).map(z=>z.id));
-    const tOg=turni.filter(t=>zids.includes(t.zona_id)&&t.data===t0);
-    const sc=tOg.filter(t=>t.pubblicato&&t.tipo==='schedulato').length;
-    const h4=tOg.filter(t=>t.tipo==='H24').length;
-    const mn=tOg.filter(t=>t.tipo==='manutenzione'||t.tipo==='guasto').length;
-    const rv=tOg.filter(t=>t.tipo==='rinviato').length;
-    const bz=turni.filter(t=>zids.includes(t.zona_id)&&!t.pubblicato).length;
-    rows+=`<tr><td><strong>${com.nome}</strong></td><td>${zids.length}</td>
-      <td>${sc?`<span class="badge bp2">${sc}</span>`:'—'}</td>
-      <td>${h4?`<span class="badge bh">${h4}</span>`:'—'}</td>
-      <td>${mn?`<span class="badge bmanu">${mn}</span>`:'—'}</td>
-      <td>${rv?`<span class="badge brinv">${rv}</span>`:'—'}</td>
-      <td>${bz?`<span class="badge bd">${bz}</span>`:'—'}</td>
-      <td><button class="btn bsm" onclick="sv_('turni');ftc(${com.id})">Turni</button></td>
-    </tr>`;
-  });
-  document.getElementById('dtbl').innerHTML=rows||'<tr class="erow"><td colspan="8">Nessun dato.</td></tr>';
+// ============================================================
+// SIDEBAR
+// ============================================================
+function renderSidebar(filter='') {
+  const list = document.getElementById('comuni-list');
+  const filtered = comuni.filter(c => c.nome.toLowerCase().includes(filter.toLowerCase()));
+  list.innerHTML = filtered.map(c => {
+    const cnt = zone.filter(z => {
+      const s = serbatoi.find(s => s.id === z.serbatoio_id);
+      return s && s.comune_id === c.id;
+    }).length;
+    return `<div class="sidebar-section">
+      <button class="comune-btn ${currentComuneId===c.id?'active':''}" onclick="selectComune(${c.id})">
+        <span>${c.nome}</span>
+        <span class="cnt">${cnt}</span>
+      </button>
+    </div>`;
+  }).join('');
+}
+function filterComuni() {
+  renderSidebar(document.getElementById('sidebar-search').value);
+}
+async function selectComune(id) {
+  currentComuneId = id;
+  selectedZone.clear();
+  renderSidebar(document.getElementById('sidebar-search').value);
+  await loadTurniComune();
 }
 
-/* ── TURNI TABLE ── */
-function ftc(cid){document.getElementById('efc').value=cid;efls();renderTT();}
-function efls(){
-  const cid=document.getElementById('efc').value;
-  const serbs=cid?sBC(cid):serbatoi;
-  so('efs','<option value="">Tutti</option>'+serbs.map(s=>`<option value="${s.id}">${s.nome}</option>`).join(''));
+// ============================================================
+// WEEK NAVIGATION
+// ============================================================
+function shiftWeek(n) {
+  currentWeekStart = addDays(currentWeekStart, n * 7);
+  updateWeekUI();
+  if (currentComuneId) loadTurniComune();
 }
-function clrF(){['efc','efs','eft','efp'].forEach(id=>document.getElementById(id).value='');document.getElementById('efd1').value='';document.getElementById('efd2').value='';efls();renderTT();}
-function renderTT(){
-  const cid=document.getElementById('efc').value,sid=document.getElementById('efs').value;
-  const d1=document.getElementById('efd1').value,d2=document.getElementById('efd2').value;
-  const tipo=document.getElementById('eft').value,pub=document.getElementById('efp').value;
-  let list=turni.filter(t=>{
-    const z=zone.find(z=>z.id==t.zona_id);if(!z)return false;
-    const s=serbatoi.find(s=>s.id==z.serbatoio_id);if(!s)return false;
-    if(cid&&String(s.comune_id)!==cid)return false;
-    if(sid&&String(z.serbatoio_id)!==sid)return false;
-    if(d1&&t.data<d1)return false;if(d2&&t.data>d2)return false;
-    if(tipo&&t.tipo!==tipo)return false;
-    if(pub==='1'&&!t.pubblicato)return false;
-    if(pub==='0'&&t.pubblicato)return false;
-    return true;
-  }).sort((a,b)=>b.data.localeCompare(a.data));
-  document.getElementById('tcnt').textContent=list.length+' turni';
-  const tcls={schedulato:'bs2',H24:'bh',manutenzione:'bmanu',guasto:'bmanu',rinviato:'brinv','n/a':'bna',aperto:'bap'};
-  let rows='';
-  list.forEach(t=>{
-    const z=zone.find(z=>z.id==t.zona_id),s=z?serbatoi.find(s=>s.id==z.serbatoio_id):null,c=s?comuni.find(c=>c.id==s.comune_id):null;
-    const cl=tcls[t.tipo]||'bna',tl=t.tipo?t.tipo[0].toUpperCase()+t.tipo.slice(1):'—';
-    const ora=t.tipo==='schedulato'&&t.orario?`<span class="tc">${t.orario.substring(0,5)}</span>`:'—';
-    rows+=`<tr>
-      <td><span style="font-family:monospace;font-size:11px;color:var(--txt3)">${z?.codice||'—'}</span></td>
-      <td><strong>${c?.nome||'—'}</strong></td>
-      <td style="font-size:12px;color:var(--txt2)">${s?.nome||'—'}</td>
-      <td>${z?.nome_zona||'—'}</td>
-      <td>${t.data}</td><td>${ora}</td>
-      <td><span class="badge ${cl}">${tl}</span></td>
-      <td>${t.pubblicato?'<span class="badge bp2">Pub.</span>':'<span class="badge bd">Bozza</span>'}</td>
-      <td><div style="display:flex;gap:3px">
-        <button class="btn bic bsm" title="Modifica" onclick="openTM(${t.id})">✏️</button>
-        ${t.pubblicato?`<button class="btn bic bsm bo" title="Nascondi" onclick="togP(${t.id},false)">👁</button>`
-                      :`<button class="btn bic bsm bg" title="Pubblica" onclick="togP(${t.id},true)">📤</button>`}
-        <button class="btn bic bsm br" title="Elimina" onclick="delT(${t.id})">🗑</button>
-      </div></td>
-    </tr>`;
-  });
-  document.getElementById('ttbl').innerHTML=rows||'<tr class="erow"><td colspan="9">Nessun turno trovato.</td></tr>';
+function goCurrentWeek() {
+  currentWeekStart = getMonday(new Date());
+  updateWeekUI();
+  if (currentComuneId) loadTurniComune();
+}
+function updateWeekUI() {
+  document.getElementById('week-label').textContent = weekLabel(currentWeekStart);
+  document.getElementById('week-badge').textContent = `Sett. ${weekNum(currentWeekStart)}`;
 }
 
-/* ── TURNO MODAL ── */
-function openTM(id=null){
-  eTid=id;
-  document.getElementById('mtt').textContent=id?'Modifica Turno':'Nuovo Turno';
-  const copts='<option value="">Seleziona...</option>'+comuni.map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
-  so('mtc',copts);
-  if(id){
-    const t=turni.find(t=>t.id==id);if(!t)return;
-    const z=zone.find(z=>z.id==t.zona_id),s=z?serbatoi.find(s=>s.id==z.serbatoio_id):null,c=s?comuni.find(c=>c.id==s.comune_id):null;
-    sv2('mtc',c?.id);mtls(s?.id);
-    setTimeout(()=>{sv2('mts',s?.id);mtlz(z?.id);
-      setTimeout(()=>{
-        sv2('mtz',z?.id);sv2('mtd',t.data);sv2('mtipo',t.tipo);
-        sv2('mora',t.orario?t.orario.substring(0,5):'08:00');
-        sv2('mfine',t.orario_fine?t.orario_fine.substring(0,5):'');
-        sv2('mdur',t.durata_ore||'');sv2('mmotivo',t.motivo||'');sv2('mdesc',t.descrizione||'');
-        sv2('mpd',t.prossima_data||'');sv2('mpo',t.prossima_ora?t.prossima_ora.substring(0,5):'');
-        sv2('mdit',t.ditta||'');sv2('mnote',t.note||'');sv2('mpres',t.pressione||'');sv2('mport',t.portata||'');
-        document.getElementById('mpub').checked=t.pubblicato;mttog();
-      },30);
-    },30);
-  } else {
-    ['mtc','mts','mtz','mmotivo','mdesc','mpd','mpo','mdit','mnote','mpres','mport','mfine','mdur'].forEach(id=>sv2(id,''));
-    sv2('mtd',td());sv2('mtipo','schedulato');sv2('mora','08:00');
-    document.getElementById('mpub').checked=false;
-    so('mts','<option value="">Seleziona...</option>');so('mtz','<option value="">Seleziona...</option>');mttog();
+// ============================================================
+// LOAD TURNI
+// ============================================================
+async function loadTurniComune() {
+  if (!currentComuneId) return;
+  showLoad('Caricamento turni…');
+  try {
+    const comune = comuni.find(c => c.id === currentComuneId);
+    const weekEnd = addDays(currentWeekStart, 6);
+    // Prendi zone del comune
+    const mySerb = serbatoi.filter(s => s.comune_id === currentComuneId).map(s => s.id);
+    const myZone = zone.filter(z => mySerb.includes(z.serbatoio_id));
+    const zIds = myZone.map(z => z.id);
+
+    let res = { data: [] };
+    if (zIds.length > 0) {
+      res = await DB.from('turni')
+        .select('*')
+        .in('zona_id', zIds)
+        .gte('data', fmtDate(currentWeekStart))
+        .lte('data', fmtDate(weekEnd));
+      if (res.error) throw res.error;
+    }
+    turni = res.data;
+
+    document.getElementById('main-title').innerHTML = `${comune.nome} <span>/ ${myZone.length} zone</span>`;
+    renderGrid(mySerb, myZone);
+    updateStats();
+    document.getElementById('stats-bar').style.display = 'flex';
+  } catch(e) {
+    toast('Errore: ' + e.message, 'error');
+  } finally {
+    hideLoad();
   }
-  om('mo-t');
-}
-function mtls(pre=null){
-  const cid=document.getElementById('mtc').value;
-  so('mts','<option value="">Seleziona...</option>'+sBC(cid).map(s=>`<option value="${s.id}"${s.id==pre?' selected':''}>${s.nome}</option>`).join(''));
-  if(!pre)so('mtz','<option value="">Seleziona...</option>');
-}
-function mtlz(pre=null){
-  const sid=document.getElementById('mts').value;
-  so('mtz','<option value="">Seleziona...</option>'+zBS(sid).map(z=>`<option value="${z.id}"${z.id==pre?' selected':''}>${z.nome_zona}${z.codice?' ('+z.codice+')':''}</option>`).join(''));
-}
-function mttog(){
-  const tipo=document.getElementById('mtipo').value;
-  document.getElementById('morf').style.display=(tipo==='schedulato'||tipo==='aperto')?'block':'none';
-  document.getElementById('mdurf').style.display=(tipo==='schedulato')?'block':'none';
-  document.getElementById('mextra').style.display=(tipo==='manutenzione'||tipo==='guasto'||tipo==='rinviato')?'block':'none';
-}
-function gv(id){const e=document.getElementById(id);return e?e.value:'';}
-async function saveTurno(){
-  const zid=gv('mtz'),data=gv('mtd'),tipo=gv('mtipo');
-  if(!zid||!data){toast('Seleziona zona e data.','e');return;}
-  const btn=document.getElementById('mtsave');btn.disabled=true;
-  const p={
-    zona_id:parseInt(zid),data,tipo,
-    orario:(tipo==='schedulato'||tipo==='aperto')?gv('mora')||null:null,
-    orario_fine:gv('mfine')||null,
-    durata_ore:gv('mdur')?parseFloat(gv('mdur')):null,
-    motivo:gv('mmotivo')||null,descrizione:gv('mdesc')||null,
-    prossima_data:gv('mpd')||null,prossima_ora:gv('mpo')||null,
-    ditta:gv('mdit')||null,note:gv('mnote')||null,
-    pressione:gv('mpres')?parseFloat(gv('mpres')):null,
-    portata:gv('mport')?parseFloat(gv('mport')):null,
-    pubblicato:document.getElementById('mpub').checked,
-    updated_at:new Date().toISOString()
-  };
-  try{
-    let res;
-    if(eTid){res=await DB.from('turni').update(p).eq('id',eTid).select().single();}
-    else{res=await DB.from('turni').insert(p).select().single();}
-    if(res.error)throw res.error;
-    if(eTid)turni=turni.map(t=>t.id==eTid?res.data:t);else turni.unshift(res.data);
-    cm('mo-t');renderTT();toast(eTid?'Turno aggiornato.':'Turno salvato.','s');
-  }catch(e){toast('Errore: '+e.message,'e');}
-  finally{btn.disabled=false;}
-}
-async function togP(id,v){
-  const{data,error}=await DB.from('turni').update({pubblicato:v,updated_at:new Date().toISOString()}).eq('id',id).select().single();
-  if(error){toast('Errore: '+error.message,'e');return;}
-  turni=turni.map(t=>t.id==id?{...t,pubblicato:v}:t);renderTT();toast(v?'Pubblicato.':'Nascosto.','s');
-}
-async function delT(id){
-  if(!await conf2('Elimina turno','Azione irreversibile.'))return;
-  const{error}=await DB.from('turni').delete().eq('id',id);
-  if(error){toast('Errore: '+error.message,'e');return;}
-  turni=turni.filter(t=>t.id!==id);renderTT();toast('Eliminato.','i');
-}
-async function pubAll(){
-  if(!await conf2('Pubblica tutto','Tutti i turni in bozza diventeranno visibili.'))return;
-  sl('Pubblicazione...');
-  const{error}=await DB.from('turni').update({pubblicato:true,updated_at:new Date().toISOString()}).eq('pubblicato',false);
-  hl();if(error){toast('Errore: '+error.message,'e');return;}
-  turni=turni.map(t=>({...t,pubblicato:true}));renderTT();toast('Tutto pubblicato.','s');
 }
 
-/* ── ZONE ── */
-function renderZ(){
-  const cf=document.getElementById('zfc').value;
-  const zs=zone.filter(z=>{if(!cf)return true;const s=serbatoi.find(s=>s.id==z.serbatoio_id);return s&&String(s.comune_id)===cf;});
-  let rows='';
-  zs.forEach(z=>{
-    const s=serbatoi.find(s=>s.id==z.serbatoio_id),c=s?comuni.find(c=>c.id==s.comune_id):null;
-    rows+=`<tr>
-      <td><span style="font-family:monospace;font-size:11px;color:var(--txt3)">${z.codice||'—'}</span></td>
-      <td><strong>${c?.nome||'—'}</strong></td>
-      <td style="font-size:12px;color:var(--txt2)">${s?.nome||'—'}</td>
-      <td><strong>${z.nome_zona}</strong></td>
-      <td style="font-size:12px;color:var(--txt2);max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${z.descrizione||'—'}</td>
-      <td style="font-size:12px;color:var(--txt3)">${z.frequenza_erogazione||'—'}</td>
-      <td><div style="display:flex;gap:3px">
-        <button class="btn bic bsm" onclick="openZM(${z.id})">✏️</button>
-        <button class="btn bic bsm br" onclick="delZ(${z.id})">🗑</button>
-      </div></td>
-    </tr>`;
-  });
-  document.getElementById('ztbl').innerHTML=rows||'<tr class="erow"><td colspan="7">Nessuna zona.</td></tr>';
-}
-function openZM(id=null,psid=null){
-  eZid=id;
-  document.getElementById('mzt').textContent=id?'Modifica Zona':'Nuova Zona';
-  so('mzc','<option value="">Seleziona...</option>'+comuni.map(c=>`<option value="${c.id}">${c.nome}</option>`).join(''));
-  if(id){
-    const z=zone.find(z=>z.id==id);if(!z)return;
-    const s=serbatoi.find(s=>s.id==z.serbatoio_id),c=s?comuni.find(c=>c.id==s.comune_id):null;
-    sv2('mzc',c?.id);mzls();
-    setTimeout(()=>{sv2('mzs',z.serbatoio_id);sv2('mzcod',z.codice||'');sv2('mznome',z.nome_zona);sv2('mzdesc',z.descrizione||'');sv2('mzfreq',z.frequenza_erogazione||'');sv2('mzpres',z.pressione_tipica||'');sv2('mznote',z.note_interne||'');},30);
-  } else {
-    ['mzcod','mznome','mzdesc','mzfreq','mzpres','mznote'].forEach(id=>sv2(id,''));
-    if(psid){const s=serbatoi.find(s=>s.id==psid);if(s){sv2('mzc',s.comune_id);mzls();setTimeout(()=>sv2('mzs',psid),30);}}
-    else so('mzs','<option value="">Seleziona...</option>');
+// ============================================================
+// RENDER GRID
+// ============================================================
+function renderGrid(mySerb, myZone) {
+  const today = fmtDate(new Date());
+  let html = '';
+
+  // Header settimana
+  html += `<div class="week-header">`;
+  for (let i = 0; i < 7; i++) {
+    const d = addDays(currentWeekStart, i);
+    const ds = fmtDate(d);
+    html += `<div class="week-day ${ds===today?'today':''}">
+      <div class="day-name">${DAYS_IT[i]}</div>
+      <div class="day-date">${fmtDateIT(d)}</div>
+    </div>`;
   }
-  om('mo-z');
-}
-function mzls(){so('mzs','<option value="">Seleziona...</option>'+sBC(document.getElementById('mzc').value).map(s=>`<option value="${s.id}">${s.nome}</option>`).join(''));}
-async function saveZona(){
-  const sid=gv('mzs'),nome=gv('mznome').trim();
-  if(!sid||!nome){toast('Seleziona serbatoio e nome.','e');return;}
-  const p={serbatoio_id:parseInt(sid),nome_zona:nome,codice:gv('mzcod').trim()||null,descrizione:gv('mzdesc').trim()||null,frequenza_erogazione:gv('mzfreq')||null,pressione_tipica:gv('mzpres')?parseFloat(gv('mzpres')):null,note_interne:gv('mznote').trim()||null};
-  try{
-    let res;
-    if(eZid){res=await DB.from('zone').update(p).eq('id',eZid).select().single();if(res.error)throw res.error;zone=zone.map(z=>z.id==eZid?res.data:z);}
-    else{res=await DB.from('zone').insert(p).select().single();if(res.error)throw res.error;zone.push(res.data);}
-    cm('mo-z');renderZ();toast('Zona salvata.','s');
-  }catch(e){toast('Errore: '+e.message,'e');}
-}
-async function delZ(id){
-  if(!await conf2('Elimina zona','Verranno eliminati anche i turni collegati.'))return;
-  const{error}=await DB.from('zone').delete().eq('id',id);
-  if(error){toast('Errore: '+error.message,'e');return;}
-  zone=zone.filter(z=>z.id!==id);turni=turni.filter(t=>t.zona_id!==id);renderZ();toast('Eliminata.','i');
-}
+  html += `</div>`;
 
-/* ── COMUNI / SERBATOI ── */
-function renderCS(){
-  let html='';
-  comuni.forEach(com=>{
-    const serbs=sBC(com.id);
-    const sh2=serbs.map(s=>{
-      const zs=zBS(s.id);
-      return`<div style="margin:8px 0 8px 14px;background:var(--blue-xl);border-radius:var(--rsm);padding:10px 14px">
-        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
-          <div>
-            <strong style="font-size:13px">🏗 ${s.nome}</strong>
-            ${s.capacita?`<span style="font-size:11px;color:var(--txt3);margin-left:8px">${s.capacita.toLocaleString()} m³</span>`:''}
-            ${s.quota?`<span style="font-size:11px;color:var(--txt3);margin-left:8px">${s.quota} m s.l.m.</span>`:''}
-            <div style="font-size:11px;color:var(--txt3);margin-top:2px">${zs.length} zone</div>
-          </div>
-          <div style="display:flex;gap:5px;flex-wrap:wrap">
-            <button class="btn bsm" onclick="openZM(null,${s.id})">+ Zona</button>
-            <button class="btn bic bsm" onclick="openSM(${s.id})">✏️</button>
-            <button class="btn bic bsm br" onclick="delS(${s.id})">🗑</button>
-          </div>
-        </div>
-        ${zs.length?`<div style="margin-top:8px;font-size:12px;color:var(--txt2)">${zs.map(z=>`<span style="margin-right:10px">• ${z.nome_zona}${z.codice?' <span style="color:var(--txt3)">('+z.codice+')</span>':''}</span>`).join('')}</div>`:''}
-      </div>`;
-    }).join('');
-    html+=`<div class="card"><div class="ch">
-      <h3 style="font-size:15px">📍 ${com.nome}${com.provincia?' ('+com.provincia+')':''}${com.codice_istat?` <span style="font-size:11px;color:var(--txt3)">[${com.codice_istat}]</span>`:''}
-        <span style="font-size:11px;color:var(--txt3);margin-left:8px">${serbs.length} serbatoi</span>
-      </h3>
-      <div style="display:flex;gap:5px">
-        <button class="btn bsm" onclick="openSM(null,${com.id})">+ Serbatoio</button>
-        <button class="btn bic bsm" onclick="openCM(${com.id})">✏️</button>
-        <button class="btn bic bsm br" onclick="delC(${com.id})">🗑</button>
+  html += `<div class="grid-wrap" id="grid-body">`;
+
+  // Raggruppa per serbatoio
+  mySerb.forEach(sId => {
+    const serb = serbatoi.find(s => s.id === sId);
+    if (!serb) return;
+    const sZone = myZone.filter(z => z.serbatoio_id === sId);
+    if (!sZone.length) return;
+
+    // Header serbatoio
+    html += `<div class="grid-row" style="background:var(--bord)">
+      <div style="background:var(--surf3);padding:8px 12px;grid-column:1/-1;font-size:11px;font-weight:700;color:var(--txt3);letter-spacing:.06em;text-transform:uppercase">
+        📍 ${serb.nome}
       </div>
-    </div><div class="cb">${sh2||'<p style="color:var(--txt3);font-size:13px">Nessun serbatoio.</p>'}</div></div>`;
+    </div>`;
+
+    sZone.forEach(z => {
+      const hasRoutine = routines.some(r => r.zona_id === z.id);
+      html += `<div class="grid-row">`;
+      // Label zona
+      html += `<div class="grid-zona-label">
+        ${multiMode ? `<input type="checkbox" class="zona-cb" id="cb-${z.id}" ${selectedZone.has(z.id)?'checked':''} onchange="toggleZona(${z.id})" onclick="event.stopPropagation()">` : ''}
+        <div class="z-nome">${z.nome_zona}</div>
+        <div class="z-desc" title="${z.descrizione||''}">${(z.descrizione||'').substring(0,45)}${(z.descrizione||'').length>45?'…':''}</div>
+        ${hasRoutine ? `<span class="routine-badge">⚡ routine</span>` : ''}
+      </div>`;
+      // Celle giorni
+      for (let i = 0; i < 7; i++) {
+        const d = fmtDate(addDays(currentWeekStart, i));
+        const dayTurni = turni.filter(t => t.zona_id === z.id && t.data === d);
+        html += `<div class="grid-cell ${selectedZone.has(z.id)?'selected-zone-row':''}" 
+          onclick="cellClick(${z.id},'${d}',event)" 
+          data-zona="${z.id}" data-date="${d}">`;
+        dayTurni.forEach(t => {
+          html += chipHtml(t);
+        });
+        if (!dayTurni.length) html += `<span class="cell-add">+</span>`;
+        html += `</div>`;
+      }
+      html += `</div>`;
+    });
   });
-  document.getElementById('cstree').innerHTML=html||'<div style="text-align:center;padding:50px;color:var(--txt3)">Nessun comune. Clicca <strong>+ Comune</strong> per iniziare.</div>';
+
+  html += `</div>`;
+  document.getElementById('grid-container').innerHTML = html;
 }
 
-function openCM(id=null){
-  eCid=id;document.getElementById('mct').textContent=id?'Modifica Comune':'Nuovo Comune';
-  if(id){const c=comuni.find(c=>c.id==id);if(!c)return;sv2('mcnome',c.nome);sv2('mcprov',c.provincia||'');sv2('mcistat',c.codice_istat||'');sv2('mcnote',c.note||'');}
-  else['mcnome','mcprov','mcistat','mcnote'].forEach(id=>sv2(id,''));
-  om('mo-c');
-}
-async function saveComune(){
-  const nome=gv('mcnome').trim();if(!nome){toast('Inserisci il nome.','e');return;}
-  const p={nome,provincia:gv('mcprov').toUpperCase()||null,codice_istat:gv('mcistat').trim()||null,note:gv('mcnote').trim()||null};
-  try{
-    let res;
-    if(eCid){res=await DB.from('comuni').update(p).eq('id',eCid).select().single();if(res.error)throw res.error;comuni=comuni.map(c=>c.id==eCid?res.data:c);}
-    else{res=await DB.from('comuni').insert(p).select().single();if(res.error)throw res.error;comuni.push(res.data);comuni.sort((a,b)=>a.nome.localeCompare(b.nome));}
-    cm('mo-c');fillSel();renderCS();toast('Comune salvato.','s');
-  }catch(e){toast('Errore: '+e.message,'e');}
-}
-async function delC(id){
-  if(!await conf2('Elimina comune','Verranno eliminati anche serbatoi, zone e turni.'))return;
-  const{error}=await DB.from('comuni').delete().eq('id',id);
-  if(error){toast('Errore: '+error.message,'e');return;}
-  comuni=comuni.filter(c=>c.id!==id);serbatoi=serbatoi.filter(s=>s.comune_id!==id);
-  zone=zone.filter(z=>{const s=serbatoi.find(s=>s.id==z.serbatoio_id);return!!s;});
-  fillSel();renderCS();toast('Comune eliminato.','i');
+function chipHtml(t) {
+  const typeMap = {
+    schedulato: 'chip-sched',
+    H24: 'chip-h24',
+    guasto: 'chip-guasto',
+    sospeso: 'chip-sospeso'
+  };
+  const cls = typeMap[t.tipo] || 'chip-sched';
+  const orario = t.orario ? t.orario.substring(0,5) : t.tipo.toUpperCase();
+  const orarioFine = t.orario_fine ? `–${t.orario_fine.substring(0,5)}` : '';
+  return `<div class="turno-chip ${cls} ${t.pubblicato?'':'chip-no-pub'}" 
+    onclick="editTurno(${t.id},event)" title="${t.note||''}">
+    <span class="chip-pub-dot"></span>
+    ${orario}${orarioFine}
+  </div>`;
 }
 
-function openSM(id=null,pcid=null){
-  eSid=id;
-  const title=id?'Modifica Serbatoio':'Nuovo Serbatoio';
-  document.getElementById('mst').textContent=title;
-  so('mscc','<option value="">Seleziona...</option>'+comuni.map(c=>`<option value="${c.id}">${c.nome}</option>`).join(''));
-  // Show/hide commune-change warning
-  let warn=document.getElementById('serb-comune-warn');
-  if(!warn){
-    warn=document.createElement('div');
-    warn.id='serb-comune-warn';
-    warn.className='alw';
-    warn.style.display='none';
-    warn.innerHTML='⚠ Stai cambiando il comune di questo serbatoio. Le zone collegate verranno spostate nel nuovo comune.';
-    document.getElementById('mscc').parentNode.after(warn);
-  }
-  if(id){
-    const s=serbatoi.find(s=>s.id==id);if(!s)return;
-    const origCid=s.comune_id;
-    sv2('mscc',s.comune_id);sv2('msnome',s.nome);sv2('mscap',s.capacita||'');sv2('msquota',s.quota||'');sv2('msnote',s.note||'');
-    document.getElementById('mscc').onchange=function(){
-      warn.style.display=(this.value && this.value!=origCid)?'block':'none';
-    };
-    warn.style.display='none';
-  } else {
-    ['msnome','mscap','msquota','msnote'].forEach(id=>sv2(id,''));
-    if(pcid)sv2('mscc',pcid);
-    if(warn)warn.style.display='none';
-    document.getElementById('mscc').onchange=null;
-  }
-  om('mo-s');
+function updateStats() {
+  document.getElementById('stat-tot').textContent = turni.length;
+  document.getElementById('stat-pub').textContent = turni.filter(t=>t.pubblicato).length;
+  document.getElementById('stat-boz').textContent = turni.filter(t=>!t.pubblicato).length;
+  document.getElementById('stat-gua').textContent = turni.filter(t=>t.tipo==='guasto').length;
 }
-async function saveSerb(){
-  const cid=gv('mscc'),nome=gv('msnome').trim();if(!cid||!nome){toast('Seleziona comune e nome.','e');return;}
-  const p={comune_id:parseInt(cid),nome,capacita:gv('mscap')?parseInt(gv('mscap')):null,quota:gv('msquota')?parseInt(gv('msquota')):null,note:gv('msnote').trim()||null};
-  try{
-    let res;
-    if(eSid){res=await DB.from('serbatoi').update(p).eq('id',eSid).select().single();if(res.error)throw res.error;serbatoi=serbatoi.map(s=>s.id==eSid?res.data:s);}
-    else{res=await DB.from('serbatoi').insert(p).select().single();if(res.error)throw res.error;serbatoi.push(res.data);}
-    cm('mo-s');renderCS();toast('Serbatoio salvato.','s');
-  }catch(e){toast('Errore: '+e.message,'e');}
+
+// ============================================================
+// CELL CLICK → NUOVO TURNO
+// ============================================================
+function cellClick(zonaId, date, e) {
+  if (e.target.classList.contains('turno-chip')) return;
+  if (e.target.classList.contains('zona-cb')) return;
+  if (multiMode) { toggleZona(zonaId); return; }
+  openTurnoModal(null, zonaId, date);
 }
-async function delS(id){
-  const s=serbatoi.find(s=>s.id==id);
-  const c=s?comuni.find(c=>c.id==s.comune_id):null;
-  const zCount=zone.filter(z=>z.serbatoio_id==id).length;
-  if(!await conf2(
-    'Elimina serbatoio',
-    `Stai eliminando "${s?.nome}" (${c?.nome||'?'}). Verranno eliminate anche ${zCount} zone e tutti i turni collegati. Il comune NON verrà eliminato.`
-  ))return;
-  const{error}=await DB.from('serbatoi').delete().eq('id',id);
-  if(error){toast('Errore: '+error.message,'e');return;}
-  serbatoi=serbatoi.filter(s=>s.id!==id);
-  zone=zone.filter(z=>z.serbatoio_id!==id);
-  turni=turni.filter(t=>{
-    const z=zone.find(z=>z.id==t.zona_id);
-    return !!z;
+function editTurno(turnoId, e) {
+  e.stopPropagation();
+  const t = turni.find(t => t.id === turnoId);
+  if (!t) return;
+  openTurnoModal(t, t.zona_id, t.data);
+}
+function openTurnoModal(t, zonaId, date) {
+  editingTurnoId = t ? t.id : null;
+  editingZonaId = zonaId;
+  editingDate = date;
+  const z = zone.find(z => z.id === zonaId);
+  const s = z ? serbatoi.find(s => s.id === z.serbatoio_id) : null;
+  document.getElementById('mt-title').textContent = t ? 'Modifica turno' : 'Nuovo turno';
+  document.getElementById('mt-context').textContent = `${z?.nome_zona||''} · ${s?.nome||''} · ${fmtDateIT(date)}`;
+  document.getElementById('mt-del-btn').style.display = t ? '' : 'none';
+  document.getElementById('mt-save-routine').checked = false;
+  document.getElementById('mt-routine-name').value = '';
+
+  setTipo(t ? t.tipo : 'schedulato');
+  document.getElementById('mt-ora-ini').value = t?.orario?.substring(0,5) || '06:00';
+  document.getElementById('mt-ora-fin').value = t?.orario_fine?.substring(0,5) || '12:00';
+  document.getElementById('mt-note').value = t?.note || '';
+  document.getElementById('mt-pub').checked = t ? t.pubblicato : true;
+  openOv('ov-turno');
+}
+
+// ============================================================
+// TIPO TAB
+// ============================================================
+function setTipo(tipo) {
+  currentTipo = tipo;
+  ['sched','h24','guasto','sospeso'].forEach(k => {
+    document.getElementById(`tab-${k}`).className = 'tipo-tab';
   });
-  renderCS();
-  toast(`Serbatoio eliminato. Il comune "${c?.nome}" è ancora presente.`,'i');
+  const keyMap = {schedulato:'sched',H24:'h24',guasto:'guasto',sospeso:'sospeso'};
+  const classMap = {schedulato:'active-sched',H24:'active-h24',guasto:'active-guasto',sospeso:'active-sospeso'};
+  const el = document.getElementById(`tab-${keyMap[tipo]}`);
+  if (el) el.className = `tipo-tab ${classMap[tipo]}`;
+  document.getElementById('orario-field').style.display = tipo === 'schedulato' ? '' : 'none';
+  document.getElementById('rt-save-row').style.display = '';
+  document.getElementById('mt-save-routine').addEventListener('change', function() {
+    document.getElementById('rt-name-field').style.display = this.checked ? '' : 'none';
+  });
+}
+function setBTipo(tipo) {
+  currentBTipo = tipo;
+  ['sched','h24','guasto','sospeso'].forEach(k => {
+    document.getElementById(`btab-${k}`).className = 'tipo-tab';
+  });
+  const keyMap = {schedulato:'sched',H24:'h24',guasto:'guasto',sospeso:'sospeso'};
+  const classMap = {schedulato:'active-sched',H24:'active-h24',guasto:'active-guasto',sospeso:'active-sospeso'};
+  const el = document.getElementById(`btab-${keyMap[tipo]}`);
+  if (el) el.className = `tipo-tab ${classMap[tipo]}`;
+  document.getElementById('bk-orario-field').style.display = tipo === 'schedulato' ? '' : 'none';
 }
 
+// ============================================================
+// SAVE / DELETE TURNO
+// ============================================================
+async function saveTurno() {
+  const tipo = currentTipo;
+  const orario = tipo === 'schedulato' ? document.getElementById('mt-ora-ini').value : null;
+  const orario_fine = tipo === 'schedulato' ? document.getElementById('mt-ora-fin').value : null;
+  const note = document.getElementById('mt-note').value.trim() || null;
+  const pub = document.getElementById('mt-pub').checked;
+  const saveRoutine = document.getElementById('mt-save-routine').checked;
+  const routineName = document.getElementById('mt-routine-name').value.trim();
+
+  const payload = { zona_id: editingZonaId, data: editingDate, tipo, orario, orario_fine, note, pubblicato: pub, updated_at: new Date().toISOString() };
+
+  document.getElementById('mt-save-btn').disabled = true;
+  try {
+    let res;
+    if (editingTurnoId) {
+      res = await DB.from('turni').update(payload).eq('id', editingTurnoId).select().single();
+      if (res.error) throw res.error;
+      turni = turni.map(t => t.id === editingTurnoId ? res.data : t);
+    } else {
+      res = await DB.from('turni').insert(payload).select().single();
+      if (res.error) throw res.error;
+      turni.push(res.data);
+    }
+    // Salva routine se richiesto
+    if (saveRoutine && routineName) {
+      const r = { id: Date.now(), nome: routineName, zona_id: editingZonaId, tipo, orario, orario_fine, note };
+      routines.push(r);
+      localStorage.setItem('turni_routines', JSON.stringify(routines));
+      toast(`Routine "${routineName}" salvata!`, 'success');
+    }
+    closeOv('ov-turno');
+    const mySerb = serbatoi.filter(s => s.comune_id === currentComuneId).map(s => s.id);
+    const myZone = zone.filter(z => mySerb.includes(z.serbatoio_id));
+    renderGrid(mySerb, myZone);
+    updateStats();
+    toast(editingTurnoId ? 'Turno aggiornato.' : 'Turno salvato.', 'success');
+  } catch(e) { toast('Errore: ' + e.message, 'error'); }
+  finally { document.getElementById('mt-save-btn').disabled = false; }
+}
+
+async function deleteTurno() {
+  if (!editingTurnoId) return;
+  if (!confirm('Elimina questo turno?')) return;
+  const { error } = await DB.from('turni').delete().eq('id', editingTurnoId);
+  if (error) { toast('Errore: ' + error.message, 'error'); return; }
+  turni = turni.filter(t => t.id !== editingTurnoId);
+  closeOv('ov-turno');
+  const mySerb = serbatoi.filter(s => s.comune_id === currentComuneId).map(s => s.id);
+  const myZone = zone.filter(z => mySerb.includes(z.serbatoio_id));
+  renderGrid(mySerb, myZone);
+  updateStats();
+  toast('Turno eliminato.', 'warning');
+}
+
+// ============================================================
+// PUBBLICA TUTTO
+// ============================================================
+async function pubAll() {
+  const bozze = turni.filter(t => !t.pubblicato);
+  if (!bozze.length) { toast('Nessuna bozza da pubblicare.', 'info'); return; }
+  if (!confirm(`Pubblica ${bozze.length} turni in bozza?`)) return;
+  showLoad('Pubblicazione…');
+  const { error } = await DB.from('turni').update({ pubblicato: true, updated_at: new Date().toISOString() }).eq('pubblicato', false).in('zona_id', turni.map(t=>t.zona_id));
+  if (error) { toast('Errore: ' + error.message, 'error'); hideLoad(); return; }
+  turni = turni.map(t => ({...t, pubblicato: true}));
+  hideLoad();
+  const mySerb = serbatoi.filter(s => s.comune_id === currentComuneId).map(s => s.id);
+  const myZone = zone.filter(z => mySerb.includes(z.serbatoio_id));
+  renderGrid(mySerb, myZone);
+  updateStats();
+  toast(`${bozze.length} turni pubblicati!`, 'success');
+}
+
+// ============================================================
+// MULTI SELEZIONE ZONE
+// ============================================================
+function toggleMultiMode() {
+  multiMode = !multiMode;
+  selectedZone.clear();
+  const btn = document.getElementById('btn-multi');
+  const mtb = document.getElementById('multi-toolbar');
+  btn.textContent = multiMode ? '✕ Esci selezione' : '☐ Seleziona zone';
+  btn.className = multiMode ? 'btn btn-amber btn-sm' : 'btn btn-ghost btn-sm';
+  mtb.style.display = multiMode ? 'flex' : 'none';
+  const mySerb = serbatoi.filter(s => s.comune_id === currentComuneId).map(s => s.id);
+  const myZone = zone.filter(z => mySerb.includes(z.serbatoio_id));
+  renderGrid(mySerb, myZone);
+}
+function toggleZona(id) {
+  if (selectedZone.has(id)) selectedZone.delete(id);
+  else selectedZone.add(id);
+  const cb = document.getElementById(`cb-${id}`);
+  if (cb) cb.checked = selectedZone.has(id);
+}
+function selectAllZone() {
+  const mySerb = serbatoi.filter(s => s.comune_id === currentComuneId).map(s => s.id);
+  zone.filter(z => mySerb.includes(z.serbatoio_id)).forEach(z => selectedZone.add(z.id));
+  const myZone = zone.filter(z => mySerb.includes(z.serbatoio_id));
+  renderGrid(mySerb, myZone);
+}
+function clearSelection() {
+  selectedZone.clear();
+  const mySerb = serbatoi.filter(s => s.comune_id === currentComuneId).map(s => s.id);
+  const myZone = zone.filter(z => mySerb.includes(z.serbatoio_id));
+  renderGrid(mySerb, myZone);
+}
+
+function bulkAssign() {
+  if (!selectedZone.size) { toast('Seleziona almeno una zona.', 'warning'); return; }
+  const summary = `${selectedZone.size} zone selezionate`;
+  document.getElementById('bulk-zone-summary').textContent = summary;
+  const today = fmtDate(new Date());
+  document.getElementById('bk-date-ini').value = fmtDate(currentWeekStart);
+  document.getElementById('bk-date-fin').value = fmtDate(addDays(currentWeekStart, 6));
+  setBTipo('schedulato');
+  openOv('ov-bulk');
+}
+
+async function bulkClear() {
+  if (!selectedZone.size) { toast('Seleziona almeno una zona.', 'warning'); return; }
+  if (!confirm(`Elimina tutti i turni della settimana per le ${selectedZone.size} zone selezionate?`)) return;
+  showLoad('Eliminazione…');
+  const zIds = [...selectedZone];
+  const weekEnd = fmtDate(addDays(currentWeekStart, 6));
+  const { error } = await DB.from('turni').delete()
+    .in('zona_id', zIds)
+    .gte('data', fmtDate(currentWeekStart))
+    .lte('data', weekEnd);
+  if (error) { toast('Errore: ' + error.message, 'error'); hideLoad(); return; }
+  turni = turni.filter(t => !zIds.includes(t.zona_id));
+  hideLoad();
+  const mySerb = serbatoi.filter(s => s.comune_id === currentComuneId).map(s => s.id);
+  const myZone = zone.filter(z => mySerb.includes(z.serbatoio_id));
+  renderGrid(mySerb, myZone);
+  updateStats();
+  toast('Turni eliminati.', 'warning');
+}
+
+async function saveBulk() {
+  const dateIni = document.getElementById('bk-date-ini').value;
+  const dateFin = document.getElementById('bk-date-fin').value || dateIni;
+  const selectedDays = [...document.querySelectorAll('#bk-days input:checked')].map(cb => parseInt(cb.value));
+  const tipo = currentBTipo;
+  const orario = tipo === 'schedulato' ? document.getElementById('bk-ora-ini').value : null;
+  const orario_fine = tipo === 'schedulato' ? document.getElementById('bk-ora-fin').value : null;
+  const note = document.getElementById('bk-note').value.trim() || null;
+  const pub = document.getElementById('bk-pub').checked;
+
+  if (!dateIni) { toast('Inserisci almeno la data inizio.', 'warning'); return; }
+
+  // Genera tutte le date nell'intervallo
+  const dates = [];
+  let cur = new Date(dateIni + 'T00:00:00');
+  const end = new Date(dateFin + 'T00:00:00');
+  while (cur <= end) {
+    const dow = cur.getDay(); // 0=dom
+    if (!selectedDays.length || selectedDays.includes(dow)) {
+      dates.push(fmtDate(cur));
+    }
+    cur.setDate(cur.getDate() + 1);
+  }
+
+  if (!dates.length) { toast('Nessun giorno corrisponde ai filtri.', 'warning'); return; }
+
+  const rows = [];
+  selectedZone.forEach(zId => {
+    dates.forEach(d => {
+      rows.push({ zona_id: zId, data: d, tipo, orario, orario_fine, note, pubblicato: pub, updated_at: new Date().toISOString() });
+    });
+  });
+
+  document.getElementById('bk-save-btn').disabled = true;
+  showLoad(`Inserimento ${rows.length} turni…`);
+  try {
+    const { data, error } = await DB.from('turni').upsert(rows, { onConflict: 'zona_id,data' }).select();
+    if (error) throw error;
+    // Aggiorna stato locale
+    data.forEach(t => {
+      turni = turni.filter(x => !(x.zona_id === t.zona_id && x.data === t.data));
+      turni.push(t);
+    });
+    closeOv('ov-bulk');
+    const mySerb = serbatoi.filter(s => s.comune_id === currentComuneId).map(s => s.id);
+    const myZone = zone.filter(z => mySerb.includes(z.serbatoio_id));
+    renderGrid(mySerb, myZone);
+    updateStats();
+    toast(`${rows.length} turni inseriti!`, 'success');
+  } catch(e) { toast('Errore: ' + e.message, 'error'); }
+  finally { document.getElementById('bk-save-btn').disabled = false; hideLoad(); }
+}
+
+// ============================================================
+// COPIA SETTIMANA PRECEDENTE
+// ============================================================
+function openCopyPrev() {
+  if (!currentComuneId) { toast('Seleziona prima un comune.', 'warning'); return; }
+  const prevStart = addDays(currentWeekStart, -7);
+  const list = document.getElementById('prev-weeks-list');
+  list.innerHTML = '';
+  // Mostra le ultime 4 settimane
+  for (let w = 1; w <= 4; w++) {
+    const ws = addDays(currentWeekStart, -7 * w);
+    const we = addDays(ws, 6);
+    const div = document.createElement('div');
+    div.className = 'prev-week-item';
+    div.innerHTML = `
+      <div>
+        <div class="pw-label">${DAYS_FULL[0]} ${fmtDateIT(ws)} — ${DAYS_FULL[6]} ${fmtDateIT(we)}</div>
+        <div class="pw-meta">Sett. ${weekNum(ws)} · ${ws.getFullYear()}</div>
+      </div>
+      <span class="pw-cnt" id="pw-cnt-${w}">…</span>`;
+    div.onclick = () => { copySourceWeek = ws; document.querySelectorAll('.prev-week-item').forEach(el => el.style.borderColor = ''); div.style.borderColor = 'var(--blue)'; };
+    list.appendChild(div);
+    // Conta turni di quella settimana
+    const mySerb = serbatoi.filter(s => s.comune_id === currentComuneId).map(s => s.id);
+    const zIds = zone.filter(z => mySerb.includes(z.serbatoio_id)).map(z => z.id);
+    DB.from('turni').select('id', {count:'exact'})
+      .in('zona_id', zIds)
+      .gte('data', fmtDate(ws))
+      .lte('data', fmtDate(we))
+      .then(r => {
+        const el = document.getElementById(`pw-cnt-${w}`);
+        if (el) el.textContent = (r.count || 0) + ' turni';
+      });
+  }
+  copySourceWeek = addDays(currentWeekStart, -7);
+  document.getElementById('cp-offset').value = 7;
+  openOv('ov-copy');
+}
+
+async function doCopy() {
+  if (!copySourceWeek) { toast('Seleziona una settimana sorgente.', 'warning'); return; }
+  const offset = parseInt(document.getElementById('cp-offset').value) || 7;
+  const overwrite = document.getElementById('cp-overwrite').checked;
+  showLoad('Copia in corso…');
+  try {
+    const mySerb = serbatoi.filter(s => s.comune_id === currentComuneId).map(s => s.id);
+    const zIds = zone.filter(z => mySerb.includes(z.serbatoio_id)).map(z => z.id);
+    const srcEnd = addDays(copySourceWeek, 6);
+
+    const { data: srcTurni, error: e1 } = await DB.from('turni')
+      .select('*')
+      .in('zona_id', zIds)
+      .gte('data', fmtDate(copySourceWeek))
+      .lte('data', fmtDate(srcEnd));
+    if (e1) throw e1;
+
+    if (!srcTurni.length) { toast('Nessun turno da copiare nella settimana selezionata.', 'warning'); hideLoad(); return; }
+
+    const newRows = srcTurni.map(t => ({
+      zona_id: t.zona_id,
+      data: fmtDate(addDays(new Date(t.data + 'T00:00:00'), offset)),
+      tipo: t.tipo,
+      orario: t.orario,
+      orario_fine: t.orario_fine,
+      note: t.note,
+      pubblicato: false, // copia come bozza
+      updated_at: new Date().toISOString()
+    }));
+
+    if (overwrite) {
+      const dstStart = fmtDate(addDays(copySourceWeek, offset));
+      const dstEnd = fmtDate(addDays(srcEnd, offset));
+      await DB.from('turni').delete().in('zona_id', zIds).gte('data', dstStart).lte('data', dstEnd);
+    }
+
+    const { data: inserted, error: e2 } = await DB.from('turni').upsert(newRows, { onConflict: 'zona_id,data' }).select();
+    if (e2) throw e2;
+
+    closeOv('ov-copy');
+    await loadTurniComune();
+    toast(`${inserted.length} turni copiati come bozze. Pubblicali quando sei pronto.`, 'success', 5000);
+  } catch(e) { toast('Errore: ' + e.message, 'error'); }
+  finally { hideLoad(); }
+}
+
+// ============================================================
+// ROUTINE
+// ============================================================
+function openRoutinePanel() {
+  renderRoutineList();
+  openOv('ov-routine');
+}
+function renderRoutineList() {
+  const list = document.getElementById('routine-list');
+  const empty = document.getElementById('routine-empty');
+  if (!routines.length) { list.innerHTML = ''; empty.style.display = ''; return; }
+  empty.style.display = 'none';
+  list.innerHTML = routines.map(r => {
+    const z = zone.find(z => z.id === r.zona_id);
+    const s = z ? serbatoi.find(s => s.id === z.serbatoio_id) : null;
+    const c = s ? comuni.find(c => c.id === s.comune_id) : null;
+    return `<div class="routine-item">
+      <div class="ri-info">
+        <div class="ri-nome">${r.nome}</div>
+        <div class="ri-meta">${c?.nome||'?'} · ${z?.nome_zona||'?'} · ${r.tipo}${r.orario ? ' '+r.orario : ''}</div>
+      </div>
+      <div class="ri-actions">
+        <button class="btn btn-green btn-sm" onclick="applyRoutine(${r.id})">▶ Applica</button>
+        <button class="btn btn-red btn-sm" onclick="deleteRoutine(${r.id})">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+async function applyRoutine(id) {
+  const r = routines.find(r => r.id === id);
+  if (!r) return;
+  showLoad('Applicazione routine…');
+  const rows = [];
+  for (let i = 0; i < 7; i++) {
+    rows.push({ zona_id: r.zona_id, data: fmtDate(addDays(currentWeekStart, i)), tipo: r.tipo, orario: r.orario, orario_fine: r.orario_fine, note: r.note, pubblicato: false, updated_at: new Date().toISOString() });
+  }
+  const { data, error } = await DB.from('turni').upsert(rows, { onConflict: 'zona_id,data' }).select();
+  if (error) { toast('Errore: ' + error.message, 'error'); hideLoad(); return; }
+  if (currentComuneId) await loadTurniComune();
+  hideLoad();
+  toast(`Routine "${r.nome}" applicata per la settimana!`, 'success');
+}
+async function applyAllRoutine() {
+  if (!routines.length) { toast('Nessuna routine salvata.', 'info'); return; }
+  showLoad('Applicazione tutte le routine…');
+  const rows = [];
+  routines.forEach(r => {
+    for (let i = 0; i < 7; i++) {
+      rows.push({ zona_id: r.zona_id, data: fmtDate(addDays(currentWeekStart, i)), tipo: r.tipo, orario: r.orario, orario_fine: r.orario_fine, note: r.note, pubblicato: false, updated_at: new Date().toISOString() });
+    }
+  });
+  const { error } = await DB.from('turni').upsert(rows, { onConflict: 'zona_id,data' });
+  if (error) { toast('Errore: ' + error.message, 'error'); hideLoad(); return; }
+  if (currentComuneId) await loadTurniComune();
+  hideLoad();
+  toast(`${routines.length} routine applicate!`, 'success');
+}
+function deleteRoutine(id) {
+  if (!confirm('Elimina questa routine?')) return;
+  routines = routines.filter(r => r.id !== id);
+  localStorage.setItem('turni_routines', JSON.stringify(routines));
+  renderRoutineList();
+  toast('Routine eliminata.', 'warning');
+}
+
+// ============================================================
+// IMPORT EXCEL
+// ============================================================
+function openImportExcel() { openOv('ov-excel'); }
+function dragOver(e) { e.preventDefault(); document.getElementById('drop-zone').classList.add('dragover'); }
+function dragLeave(e) { document.getElementById('drop-zone').classList.remove('dragover'); }
+function dropFile(e) {
+  e.preventDefault();
+  document.getElementById('drop-zone').classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file) parseExcel(file);
+}
+function loadExcel(e) {
+  const file = e.target.files[0];
+  if (file) parseExcel(file);
+}
+function parseExcel(file) {
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const wb = XLSX.read(e.target.result, { type: 'binary' });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+    excelData = rows;
+    showExcelPreview(rows);
+  };
+  reader.readAsBinaryString(file);
+}
+function showExcelPreview(rows) {
+  if (!rows.length) { toast('File vuoto o formato non riconosciuto.', 'error'); return; }
+  const preview = document.getElementById('excel-preview');
+  preview.style.display = '';
+  const cols = Object.keys(rows[0]);
+  const table = document.getElementById('excel-table');
+  let html = `<thead style="background:var(--surf3)"><tr>${cols.map(c=>`<th style="padding:6px 10px;text-align:left;font-size:11px;color:var(--txt2);white-space:nowrap">${c}</th>`).join('')}</tr></thead><tbody>`;
+  rows.slice(0,10).forEach(r => {
+    html += `<tr style="border-top:1px solid var(--bord)">${cols.map(c=>`<td style="padding:5px 10px;font-size:11px;color:var(--txt);white-space:nowrap">${r[c]||''}</td>`).join('')}</tr>`;
+  });
+  if (rows.length > 10) html += `<tr><td colspan="${cols.length}" style="padding:6px 10px;font-size:11px;color:var(--txt3);font-style:italic">… e altri ${rows.length-10} turni</td></tr>`;
+  html += '</tbody>';
+  table.innerHTML = html;
+  // Controlla match zone
+  let matched = 0;
+  rows.forEach(r => {
+    const codice = r['codice_zona'] || r['codice'] || r['CODICE'] || r['CODICE_ZONA'];
+    if (codice && zone.find(z => z.codice === String(codice))) matched++;
+  });
+  document.getElementById('excel-match-info').textContent = `${matched}/${rows.length} righe con zona riconosciuta`;
+}
+async function confirmImport() {
+  if (!excelData.length) return;
+  showLoad('Importazione Excel…');
+  let ok = 0, skip = 0;
+  const rows = [];
+  excelData.forEach(r => {
+    const codice = r['codice_zona'] || r['codice'] || r['CODICE'] || r['CODICE_ZONA'] || '';
+    const z = zone.find(z => z.codice === String(codice));
+    if (!z) { skip++; return; }
+    // Parsing data
+    let data = r['data'] || r['DATA'] || '';
+    if (typeof data === 'number') {
+      const d = new Date((data - 25569) * 86400 * 1000);
+      data = fmtDate(d);
+    } else if (data.includes('/')) {
+      const [dd, mm, yyyy] = data.split('/');
+      data = `${yyyy}-${mm.padStart(2,'0')}-${dd.padStart(2,'0')}`;
+    }
+    const tipo = (r['tipo'] || r['TIPO'] || 'schedulato').toLowerCase();
+    const orario = r['ora_inizio'] || r['ORA_INIZIO'] || null;
+    const orario_fine = r['ora_fine'] || r['ORA_FINE'] || null;
+    const note = r['note'] || r['NOTE'] || null;
+    rows.push({ zona_id: z.id, data, tipo, orario: orario||null, orario_fine: orario_fine||null, note: note||null, pubblicato: false, updated_at: new Date().toISOString() });
+    ok++;
+  });
+  if (rows.length) {
+    const { error } = await DB.from('turni').upsert(rows, { onConflict: 'zona_id,data' });
+    if (error) { toast('Errore import: ' + error.message, 'error'); hideLoad(); return; }
+  }
+  hideLoad();
+  closeOv('ov-excel');
+  if (currentComuneId) await loadTurniComune();
+  toast(`Importati ${ok} turni${skip ? ` · ${skip} righe non riconosciute` : ''}.`, 'success', 5000);
+}
+
+// INIT
 boot();
 </script>
 </body>
